@@ -18,7 +18,7 @@ Camera::Camera() {
 	create_buffer_allocator();
 	configure_requests();
 
-	camera_->requestCompleted.connect(request_complete);
+	camera_->requestCompleted.connect(this, &rscamera::Camera::request_complete);
 }
 
 Camera::~Camera() {
@@ -46,15 +46,13 @@ void Camera::start() {
 }
 
 /*
-	Static privats
-*/
-void Camera::request_complete(libcamera::Request *request) {
-	std::cout << "hi there" << std::endl;
-}
-
-/*
 	Privats
 */
+
+void Camera::request_complete(libcamera::Request *request) {
+	processRequest(request);
+}
+
 
 void Camera::init_camera() {
 	int ret = manager_->start();
@@ -118,4 +116,43 @@ void Camera::configure_requests() {
 
 		requests_.push_back(std::move(request));
 	}
+}
+
+void Camera::processRequest(libcamera::Request *request) {
+	std::cout << std::endl
+		<< "Request completed: " << request->toString() << std::endl;
+
+	const libcamera::ControlList &requestMetadata = request->metadata();
+	for (const auto &ctrl : requestMetadata) {
+		const libcamera::ControlId *id = libcamera::controls::controls.at(ctrl.first);
+		const libcamera::ControlValue &value = ctrl.second;
+
+		std::cout << "\t" << id->name() << " = " << value.toString()
+			<< std::endl;
+	}
+
+	const libcamera::Request::BufferMap &buffers = request->buffers();
+	for (auto bufferPair : buffers) {
+		libcamera::FrameBuffer *buffer = bufferPair.second;
+		const libcamera::FrameMetadata &metadata = buffer->metadata();
+
+		std::cout << " seq: " << std::setw(6) << std::setfill('0') << metadata.sequence
+			<< " timestamp: " << metadata.timestamp
+			<< " bytesused: ";
+
+		unsigned int nplane = 0;
+		for (const libcamera::FrameMetadata::Plane &plane : metadata.planes())
+		{
+			std::cout << plane.bytesused;
+			if (++nplane < metadata.planes().size())
+				std::cout << "/";
+		}
+
+		std::cout << std::endl;
+
+		// IMAGE HERE!
+	}
+
+	/* Re-queue the Request to the camera. */
+	request->reuse(libcamera::Request::ReuseBuffers);
 }

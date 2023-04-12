@@ -21,7 +21,7 @@ int main() {
 	rscamera::Camera camera;
 	camera.start();
 
-	uint16_t x = 300;
+	uint16_t x = 5000;
 	std::this_thread::sleep_for(std::chrono::milliseconds(x));
 
 	

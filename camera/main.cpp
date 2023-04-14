@@ -12,7 +12,8 @@
 #include <libcamera/framebuffer_allocator.h>
 #include <libcamera/property_ids.h>
 
-#include "src/include/camera.h"
+#include <camera.h>
+#include <jpeg_converter.h>
 
 
 

@@ -53,14 +53,6 @@ void Camera::start() {
 /*
 	Privats
 */
-
-void Camera::request_complete(libcamera::Request *request) {
-	processRequest(request);
-}
-
-
-
-
 void Camera::init_camera() {
 	int ret = manager_->start();
 	for (auto & i : manager_->cameras()) {
@@ -88,6 +80,10 @@ void Camera::configure_camera() {
 	camera_->configure(config_.get());
 
 	controls_.set(libcamera::controls::ExposureTime, 0.0);
+	controls_.set(libcamera::controls::AeExposureMode, libcamera::controls::ExposureNormal);
+	controls_.set(libcamera::controls::AwbMode, libcamera::controls::AwbAuto);
+	controls_.set(libcamera::controls::AeMeteringMode, libcamera::controls::MeteringMatrix);
+	controls_.set(libcamera::controls::AfMode, libcamera::controls::AfModeEnum::AfModeAuto);
 }
 
 void Camera::get_dimensions() {
@@ -153,6 +149,11 @@ void Camera::configure_requests() {
 }
 
 
+void Camera::request_complete(libcamera::Request *request) {
+	processRequest(request);
+}
+
+
 void Camera::processRequest(libcamera::Request *request) {
 	std::cout << std::endl
 		<< "Request completed: " << request->toString() << std::endl;
@@ -169,21 +170,23 @@ void Camera::processRequest(libcamera::Request *request) {
 	const libcamera::Request::BufferMap &buffers = request->buffers();
 	for (auto bufferPair : buffers) {
 		libcamera::FrameBuffer *buffer = bufferPair.second;
-		const libcamera::FrameMetadata &metadata = buffer->metadata();
+		// const libcamera::FrameMetadata &metadata = buffer->metadata();
 
-		std::cout << " seq: " << std::setw(6) << std::setfill('0') << metadata.sequence
-			<< " timestamp: " << metadata.timestamp
-			<< " bytesused: ";
+		#if 0
+			std::cout << " seq: " << std::setw(6) << std::setfill('0') << metadata.sequence
+				<< " timestamp: " << metadata.timestamp
+				<< " bytesused: ";
 
-		unsigned int nplane = 0;
-		for (const libcamera::FrameMetadata::Plane &plane : metadata.planes())
-		{
-			std::cout << plane.bytesused;
-			if (++nplane < metadata.planes().size())
-				std::cout << "/";
-		}
-
-		std::cout << std::endl;
+			unsigned int nplane = 0;
+			for (const libcamera::FrameMetadata::Plane &plane : metadata.planes())
+			{
+				std::cout << plane.bytesused;
+				if (++nplane < metadata.planes().size())
+					std::cout << "/";
+			}
+	
+			std::cout << std::endl;
+		#endif
 
 		// IMAGE HERE!
 		auto item = mapped_buffers_.find(buffer);
@@ -191,7 +194,7 @@ void Camera::processRequest(libcamera::Request *request) {
 			std::vector<libcamera::Span<uint8_t>> img = item->second;
 			
 			cv::Mat frame; 
-			frame.create(dimensions_.height, dimensions_.width,CV_8UC3);
+			frame.create(dimensions_.height, dimensions_.width ,CV_8UC3);
 			uint8_t * memory = item->second[0].data();
 			for (unsigned int i = 0; i < dimensions_.height; i++, memory += dimensions_.stride)
                 memcpy(frame.ptr(i), memory, dimensions_.width * 3);
@@ -203,4 +206,5 @@ void Camera::processRequest(libcamera::Request *request) {
 
 	/* Re-queue the Request to the camera. */
 	request->reuse(libcamera::Request::ReuseBuffers);
+	camera_->queueRequest(request);
 }

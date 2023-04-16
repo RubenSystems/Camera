@@ -1,6 +1,6 @@
 lib/*
 main
-
+testing/*
 # Prerequisites
 *.d
 

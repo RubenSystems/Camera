@@ -14,8 +14,8 @@
 #include <libcamera/framebuffer_allocator.h>
 #include <libcamera/property_ids.h>
 
-#define CAMERA_HEIGHT 640
-#define CAMERA_WIDTH 1024
+#define CAMERA_HEIGHT 874
+#define CAMERA_WIDTH 1164
 
 namespace rscamera {
 

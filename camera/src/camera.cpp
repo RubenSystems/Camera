@@ -56,23 +56,28 @@ void Camera::start() {
 void Camera::init_camera() {
 	int ret = manager_->start();
 	for (auto & i : manager_->cameras()) {
+		std::cout << "NEW CAM\n";
 		camera_ = i;
 		break;
 	}
 }
 
+// [5:34:31.988634869] [95190]  INFO Camera camera_manager.cpp:299 libcamera v0.0.0+4225-74d023d8
+// [5:34:32.056062840] [95193]  INFO RPI raspberrypi.cpp:1476 Registered camera /base/soc/i2c0mux/i2c@1/imx519@1a to Unicam device /dev/media4 and ISP device /dev/media1
+// [5:34:32.057752434] [95190]  INFO Camera camera.cpp:1028 configuring streams: (0) 2328x1748-YUV420
+// [5:34:32.058968515] [95193]  INFO RPI raspberrypi.cpp:851 Sensor: /base/soc/i2c0mux/i2c@1/imx519@1a - Selected sensor format: 2328x1748-SRGGB10_1X10 - Selected unicam format: 2328x1748-pRAA
 
 void Camera::configure_camera() {
 
-	config_ = camera_
-	->generateConfiguration(
-		{ libcamera::StreamRole::VideoRecording }
+	config_ = camera_->generateConfiguration(
+		{ libcamera::StreamRole::Viewfinder }
 	);
 
 	stream_config_ = &(config_->at(0));
 
 	stream_config_->size.width = CAMERA_WIDTH;
 	stream_config_->size.height = CAMERA_HEIGHT; 
+	stream_config_->bufferCount = 4; 
 	stream_config_->pixelFormat = libcamera::formats::RGB888;
 
 
@@ -126,7 +131,7 @@ void Camera::create_buffer_allocator() {
 
 void Camera::configure_requests() {
 	stream_ = stream_config_->stream();
-	const std::vector<std::unique_ptr<libcamera::FrameBuffer>> &buffers = allocator_->
+	const std::vector<std::unique_ptr<libcamera::FrameBuffer>> & buffers = allocator_->
 																			buffers(stream_);
 	
 	for (unsigned int i = 0; i < buffers.size(); ++i) {
@@ -142,7 +147,7 @@ void Camera::configure_requests() {
 		}
 
 		libcamera::ControlList &controls = request->controls();
-		controls.set(libcamera::controls::Brightness, 0.5);
+		// controls.set(libcamera::controls::Brightness, 0.5);
 
 		requests_.push_back(std::move(request));
 	}
@@ -157,7 +162,7 @@ void Camera::request_complete(libcamera::Request *request) {
 void Camera::processRequest(libcamera::Request *request) {
 	std::cout << std::endl
 		<< "Request completed: " << request->toString() << std::endl;
-
+	int counter = 0;
 	const libcamera::ControlList &requestMetadata = request->metadata();
 	for (const auto &ctrl : requestMetadata) {
 		const libcamera::ControlId *id = libcamera::controls::controls.at(ctrl.first);
@@ -166,13 +171,14 @@ void Camera::processRequest(libcamera::Request *request) {
 		std::cout << "\t" << id->name() << " = " << value.toString()
 			<< std::endl;
 	}
-
+	
 	const libcamera::Request::BufferMap &buffers = request->buffers();
 	for (auto bufferPair : buffers) {
 		libcamera::FrameBuffer *buffer = bufferPair.second;
-		// const libcamera::FrameMetadata &metadata = buffer->metadata();
+		
 
-		#if 0
+		#if 1
+			const libcamera::FrameMetadata &metadata = buffer->metadata();
 			std::cout << " seq: " << std::setw(6) << std::setfill('0') << metadata.sequence
 				<< " timestamp: " << metadata.timestamp
 				<< " bytesused: ";
@@ -190,21 +196,26 @@ void Camera::processRequest(libcamera::Request *request) {
 
 		// IMAGE HERE!
 		auto item = mapped_buffers_.find(buffer);
+		
+		
 		if (item != mapped_buffers_.end()) {
 			std::vector<libcamera::Span<uint8_t>> img = item->second;
 			
 			cv::Mat frame; 
-			frame.create(dimensions_.height, dimensions_.width ,CV_8UC3);
+			frame.create(dimensions_.height, dimensions_.width, CV_8UC3);
+			
 			uint8_t * memory = item->second[0].data();
-			for (unsigned int i = 0; i < dimensions_.height; i++, memory += dimensions_.stride)
-                memcpy(frame.ptr(i), memory, dimensions_.width * 3);
+			for (uint32_t i = 0; i < dimensions_.height; i++, memory += dimensions_.stride) {
+				memmove(frame.ptr(i), memory, dimensions_.width * 3);
+				// std::cout << (int)*memory << " " << dimensions_.stride << std::endl;
+			}
 
-			cv::imwrite("test.jpg", frame);
+			cv::imwrite( "testing/" + std::to_string(counter++) + ".jpg", frame);
 
 		} 
 	}
 
 	/* Re-queue the Request to the camera. */
 	request->reuse(libcamera::Request::ReuseBuffers);
-	camera_->queueRequest(request);
+	// camera_->queueRequest(request);
 }

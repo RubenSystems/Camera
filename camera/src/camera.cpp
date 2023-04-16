@@ -70,7 +70,7 @@ void Camera::init_camera() {
 void Camera::configure_camera() {
 
 	config_ = camera_->generateConfiguration(
-		{ libcamera::StreamRole::Viewfinder }
+		{ libcamera::StreamRole::VideoRecording }
 	);
 
 	stream_config_ = &(config_->at(0));
@@ -84,11 +84,17 @@ void Camera::configure_camera() {
 	config_->validate();
 	camera_->configure(config_.get());
 
+	int64_t frame_time = 1000000 / 30;
+
 	controls_.set(libcamera::controls::ExposureTime, 0.0);
 	controls_.set(libcamera::controls::AeExposureMode, libcamera::controls::ExposureNormal);
 	controls_.set(libcamera::controls::AwbMode, libcamera::controls::AwbAuto);
 	controls_.set(libcamera::controls::AeMeteringMode, libcamera::controls::MeteringMatrix);
 	controls_.set(libcamera::controls::AfMode, libcamera::controls::AfModeEnum::AfModeAuto);
+	controls_.set(
+		libcamera::controls::FrameDurationLimits, 
+		libcamera::Span<const int64_t, 2>({ frame_time, frame_time })
+	);
 }
 
 void Camera::get_dimensions() {
@@ -217,5 +223,5 @@ void Camera::processRequest(libcamera::Request *request) {
 
 	/* Re-queue the Request to the camera. */
 	request->reuse(libcamera::Request::ReuseBuffers);
-	// camera_->queueRequest(request);
+	camera_->queueRequest(request);
 }

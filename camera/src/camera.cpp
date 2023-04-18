@@ -3,7 +3,6 @@
 #include <sys/mman.h>
 
 #include <completed_request.h>
-#include <unique_p.h>
 
 using rscamera::Camera; 
 

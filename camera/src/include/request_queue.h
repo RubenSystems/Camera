@@ -6,9 +6,6 @@
 
 #include <completed_request.h>
 
-
-
-
 namespace rscamera {
 	class RequestQueue {
 
@@ -16,19 +13,9 @@ namespace rscamera {
 			typedef CompletedRequest* request_type;
 
 		public: 
-			void add(const request_type & new_request) {
-				std::unique_lock<std::mutex> lock(mutex_);
-				queue_.push(new_request);
-				cond_.notify_one();
-			}
+			void add(const request_type & new_request);
 
-			request_type pop() {
-				std::unique_lock<std::mutex> lock(mutex_);
-				cond_.wait(lock, [this] { return !queue_.empty(); });
-				request_type request  = queue_.front();
-				queue_.pop();
-				return request;
-			}
+			request_type pop();
 
 		private: 
 			std::queue<request_type> queue_;

@@ -202,7 +202,6 @@ void Camera::processRequest(libcamera::Request *request) {
 	if (request->status() == libcamera::Request::RequestCancelled)
 		return;
 
-	std::cout << "hi\n";
 	queue_.add(new CompletedRequest(counter++, request));
 	// unique_p<CompletedRequest> comp = unique_p<CompletedRequest>(
 	// 	, 

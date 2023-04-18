@@ -27,7 +27,6 @@ int main() {
 	while (counter ++ < 40) {
 		// this waits untill there is a complete request
 		rscamera::CompletedRequest * req = camera.completed_request();
-		std::cout << "frame\n";
 		libcamera::Stream * camera_stream = camera.stream();
 		
 		libcamera::FrameBuffer * buffer = req->buffers[camera_stream];

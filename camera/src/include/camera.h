@@ -14,8 +14,11 @@
 #include <libcamera/framebuffer_allocator.h>
 #include <libcamera/property_ids.h>
 
-#define CAMERA_HEIGHT 3496 / 3
-#define CAMERA_WIDTH 4656 / 3
+#include <request_queue.h>
+
+#define CAMERA_HEIGHT 3496 / 2
+#define CAMERA_WIDTH 4656 / 2
+#define DEBUG_PRINT 0
 
 namespace rscamera {
 
@@ -27,12 +30,24 @@ namespace rscamera {
 	class Camera {
 
 		public:
-			Camera() ;
+			Camera();
 
 			~Camera();
 
 		public: 
 			void start();
+
+			Dimensions dimensions();
+
+			libcamera::Stream * stream();
+
+			CompletedRequest * completed_request();
+
+			bool has_buffer(libcamera::FrameBuffer * pointer);
+
+			std::vector<libcamera::Span<uint8_t>> buffer(libcamera::FrameBuffer * pointer);
+
+			void next_frame(CompletedRequest * req);
 
 		private:
 
@@ -44,7 +59,6 @@ namespace rscamera {
 			void create_buffer_allocator();
 
 			void configure_requests();
-
 			
 			// Event handlers
 			void request_complete(libcamera::Request *request);
@@ -52,7 +66,7 @@ namespace rscamera {
 			void processRequest(libcamera::Request *request);
 
 			void get_dimensions();
-
+		
 		private:
 			libcamera::CameraManager * manager_;
 			std::shared_ptr<libcamera::Camera> camera_ = nullptr;
@@ -67,5 +81,7 @@ namespace rscamera {
 				std::vector<libcamera::Span<uint8_t>>
 			> mapped_buffers_;
 			Dimensions dimensions_;
+			RequestQueue queue_;
+
 	};
 }

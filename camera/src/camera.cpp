@@ -2,8 +2,8 @@
 #include <camera.h>
 #include <sys/mman.h>
 
-// temporary
-#include <opencv2/opencv.hpp>
+#include <completed_request.h>
+#include <unique_p.h>
 
 using rscamera::Camera; 
 
@@ -50,22 +50,52 @@ void Camera::start() {
 		camera_->queueRequest(request.get());
 }
 
+libcamera::Stream * Camera::stream() {
+	return stream_;
+}
+
+
+rscamera::Dimensions Camera::dimensions() {
+	return dimensions_;
+}
+
+rscamera::CompletedRequest * Camera::completed_request() {
+	return queue_.pop();
+}
+
+bool Camera::has_buffer(libcamera::FrameBuffer * pointer) {
+	return mapped_buffers_.find(pointer) != mapped_buffers_.end();
+}
+
+std::vector<libcamera::Span<uint8_t>> Camera::buffer(libcamera::FrameBuffer * pointer) {
+	auto buf = mapped_buffers_.find(pointer);
+	return mapped_buffers_[pointer];
+		
+}
+
+void Camera::next_frame(rscamera::CompletedRequest * req) {
+	libcamera::Request * request = req->request;
+	libcamera::Request::BufferMap buffers = std::move(req->buffers);
+
+	for (auto const &buffer : buffers){
+		if (request->addBuffer(buffer.first, buffer.second) < 0)
+			throw std::runtime_error("[BUFFER] - could not readd buffer to req");
+	}
+
+	request->reuse(libcamera::Request::ReuseBuffers);
+	camera_->queueRequest(request);
+}
+
 /*
 	Privats
 */
 void Camera::init_camera() {
 	int ret = manager_->start();
 	for (auto & i : manager_->cameras()) {
-		std::cout << "NEW CAM\n";
 		camera_ = i;
 		break;
 	}
 }
-
-// [5:34:31.988634869] [95190]  INFO Camera camera_manager.cpp:299 libcamera v0.0.0+4225-74d023d8
-// [5:34:32.056062840] [95193]  INFO RPI raspberrypi.cpp:1476 Registered camera /base/soc/i2c0mux/i2c@1/imx519@1a to Unicam device /dev/media4 and ISP device /dev/media1
-// [5:34:32.057752434] [95190]  INFO Camera camera.cpp:1028 configuring streams: (0) 2328x1748-YUV420
-// [5:34:32.058968515] [95193]  INFO RPI raspberrypi.cpp:851 Sensor: /base/soc/i2c0mux/i2c@1/imx519@1a - Selected sensor format: 2328x1748-SRGGB10_1X10 - Selected unicam format: 2328x1748-pRAA
 
 void Camera::configure_camera() {
 
@@ -161,67 +191,78 @@ void Camera::configure_requests() {
 
 
 void Camera::request_complete(libcamera::Request *request) {
+	if (request->status() == libcamera::Request::RequestCancelled)
+		return;
+
 	processRequest(request);
 }
 
 
 void Camera::processRequest(libcamera::Request *request) {
-	std::cout << std::endl
-		<< "Request completed: " << request->toString() << std::endl;
-	int counter = 0;
-	const libcamera::ControlList &requestMetadata = request->metadata();
-	for (const auto &ctrl : requestMetadata) {
-		const libcamera::ControlId *id = libcamera::controls::controls.at(ctrl.first);
-		const libcamera::ControlValue &value = ctrl.second;
+	static int counter = 0;
+	if (request->status() == libcamera::Request::RequestCancelled)
+		return;
 
-		std::cout << "\t" << id->name() << " = " << value.toString()
-			<< std::endl;
-	}
+	std::cout << "hi\n";
+	queue_.add(new CompletedRequest(counter++, request));
+	// unique_p<CompletedRequest> comp = unique_p<CompletedRequest>(
+	// 	, 
+	// 	[&request](CompletedRequest * req) {
+	// 		request->reuse(libcamera::Request::ReuseBuffers);
+	// 	}
+	// );
+
+
+// "	
+// 	#if DEBUG_PRINT
+// 	std::cout << std::endl
+// 		<< "Request completed: " << request->toString() << std::endl;
 	
-	const libcamera::Request::BufferMap &buffers = request->buffers();
-	for (auto bufferPair : buffers) {
-		libcamera::FrameBuffer *buffer = bufferPair.second;
-		
+// 	const libcamera::ControlList &requestMetadata = request->metadata();
+// 	for (const auto &ctrl : requestMetadata) {
+// 		const libcamera::ControlId *id = libcamera::controls::controls.at(ctrl.first);
+// 		const libcamera::ControlValue &value = ctrl.second;
 
-		#if 1
-			const libcamera::FrameMetadata &metadata = buffer->metadata();
-			std::cout << " seq: " << std::setw(6) << std::setfill('0') << metadata.sequence
-				<< " timestamp: " << metadata.timestamp
-				<< " bytesused: ";
+// 		std::cout << "\t" << id->name() << " = " << value.toString()
+// 			<< std::endl;
+// 	}
+// 	#endif
 
-			unsigned int nplane = 0;
-			for (const libcamera::FrameMetadata::Plane &plane : metadata.planes())
-			{
-				std::cout << plane.bytesused;
-				if (++nplane < metadata.planes().size())
-					std::cout << "/";
-			}
 	
-			std::cout << std::endl;
-		#endif
+// 	const libcamera::Request::BufferMap &buffers = request->buffers();
+// 	for (auto bufferPair : buffers) {
+// 		libcamera::FrameBuffer *buffer = bufferPair.second;
+		
 
-		// IMAGE HERE!
-		auto item = mapped_buffers_.find(buffer);
+// 		#if DEBUG_PRINT
+// 			const libcamera::FrameMetadata &metadata = buffer->metadata();
+// 			std::cout << " seq: " << std::setw(6) << std::setfill('0') << metadata.sequence
+// 				<< " timestamp: " << metadata.timestamp
+// 				<< " bytesused: ";
+
+// 			unsigned int nplane = 0;
+// 			for (const libcamera::FrameMetadata::Plane &plane : metadata.planes())
+// 			{
+// 				std::cout << plane.bytesused;
+// 				if (++nplane < metadata.planes().size())
+// 					std::cout << "/";
+// 			}
+	
+// 			std::cout << std::endl;
+// 		#endif
+
+// 		// IMAGE HERE!
+// 		auto item = mapped_buffers_.find(buffer);
 		
 		
-		if (item != mapped_buffers_.end()) {
-			std::vector<libcamera::Span<uint8_t>> img = item->second;
+// 		if (item != mapped_buffers_.end()) {
+// 			std::vector<libcamera::Span<uint8_t>> img = item->second;
 			
-			cv::Mat frame; 
-			frame.create(dimensions_.height, dimensions_.width, CV_8UC3);
-			
-			uint8_t * memory = item->second[0].data();
-			for (uint32_t i = 0; i < dimensions_.height; i++, memory += dimensions_.stride) {
-				memmove(frame.ptr(i), memory, dimensions_.width * 3);
-				// std::cout << (int)*memory << " " << dimensions_.stride << std::endl;
-			}
+// 			latest_buffer = item->second[0].data();
 
-			cv::imwrite( "testing/" + std::to_string(counter++) + ".jpg", frame);
+// 		} 
+// 	}
 
-		} 
-	}
-
-	/* Re-queue the Request to the camera. */
-	request->reuse(libcamera::Request::ReuseBuffers);
-	camera_->queueRequest(request);
+// 	/* Re-queue the Request to the camera. */
+// 	request->reuse(libcamera::Request::ReuseBuffers);
 }

@@ -16,8 +16,9 @@
 
 #include <request_queue.h>
 
-#define CAMERA_HEIGHT 3496 / 2
-#define CAMERA_WIDTH 4656 / 2
+#define SF 8
+#define CAMERA_HEIGHT  4656 / SF
+#define CAMERA_WIDTH 3496 / SF
 #define DEBUG_PRINT 0
 
 namespace rscamera {

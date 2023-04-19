@@ -1,7 +1,7 @@
 CXX = g++
 CPPFLAGS = -std=c++17 -DDEBUG
-INCLUDES = -I /usr/include/libcamera -I ./src/include -I /usr/local/include/opencv4 
-LIBS = `pkg-config --libs --cflags libcamera` `pkg-config --libs --cflags opencv4` -pthread
+INCLUDES = -I /usr/include/libcamera -I ./src/include -I /usr/local/include/opencv4 -I ./lib/RSiCS/src/include
+LIBS = `pkg-config --libs --cflags libcamera` `pkg-config --libs --cflags opencv4` -pthread -l rsics
 SRCS = $(shell find ./src -name "*.cpp")  main.cpp
 OBJS = $(patsubst %.cpp, %.o, $(SRCS))
 TARGET = main

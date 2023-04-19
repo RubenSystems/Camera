@@ -1,0 +1,3 @@
+[submodule "camera/lib/RSiCS"]
+	path = camera/lib/RSiCS
+	url = git@github.com:RubenSystems/RSiCS.git

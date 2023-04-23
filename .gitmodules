@@ -1,3 +1,6 @@
 [submodule "camera/lib/RSiCS"]
 	path = camera/lib/RSiCS
 	url = git@github.com:RubenSystems/RSiCS.git
+[submodule "camera/lib/libjpeg-turbo"]
+	path = camera/lib/libjpeg-turbo
+	url = https://github.com/libjpeg-turbo/libjpeg-turbo.git

@@ -98,7 +98,7 @@ namespace rsics {
 			}
 
 			void renew_client(const std::string & uid, const Computer & comp) {
-				clients.find(uid)->second.renew();
+				clients.at(uid).renew();
 			}
 
 			void recieved_client(const std::string & uid, const Computer & comp) {

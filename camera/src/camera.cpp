@@ -107,19 +107,22 @@ void Camera::configure_camera() {
 	stream_config_->size.width = CAMERA_WIDTH;
 	stream_config_->size.height = CAMERA_HEIGHT; 
 	stream_config_->bufferCount = 4; 
-	stream_config_->pixelFormat = libcamera::formats::RGB888;
+	stream_config_->pixelFormat = libcamera::formats::BGR888;
 
 
 	config_->validate();
 	camera_->configure(config_.get());
 
-	int64_t frame_time = 1000000 / 20;
+	int64_t frame_time = 1000000 / 35;
 
 	controls_.set(libcamera::controls::ExposureTime, 0.0);
+	controls_.set(libcamera::controls::Brightness, 0.0);
 	controls_.set(libcamera::controls::AeExposureMode, libcamera::controls::ExposureNormal);
 	controls_.set(libcamera::controls::AwbMode, libcamera::controls::AwbAuto);
 	controls_.set(libcamera::controls::AeMeteringMode, libcamera::controls::MeteringMatrix);
 	controls_.set(libcamera::controls::AfMode, libcamera::controls::AfModeEnum::AfModeAuto);
+	controls_.set(libcamera::controls::AfTrigger, libcamera::controls::AfTriggerEnum::AfTriggerStart);
+
 	controls_.set(
 		libcamera::controls::FrameDurationLimits, 
 		libcamera::Span<const int64_t, 2>({ frame_time, frame_time })
@@ -183,7 +186,6 @@ void Camera::configure_requests() {
 
 		libcamera::ControlList &controls = request->controls();
 		// controls.set(libcamera::controls::Brightness, 0.5);
-
 		requests_.push_back(std::move(request));
 	}
 }
@@ -203,64 +205,4 @@ void Camera::processRequest(libcamera::Request *request) {
 		return;
 
 	queue_.add(new CompletedRequest(counter++, request));
-	// unique_p<CompletedRequest> comp = unique_p<CompletedRequest>(
-	// 	, 
-	// 	[&request](CompletedRequest * req) {
-	// 		request->reuse(libcamera::Request::ReuseBuffers);
-	// 	}
-	// );
-
-
-// "	
-// 	#if DEBUG_PRINT
-// 	std::cout << std::endl
-// 		<< "Request completed: " << request->toString() << std::endl;
-	
-// 	const libcamera::ControlList &requestMetadata = request->metadata();
-// 	for (const auto &ctrl : requestMetadata) {
-// 		const libcamera::ControlId *id = libcamera::controls::controls.at(ctrl.first);
-// 		const libcamera::ControlValue &value = ctrl.second;
-
-// 		std::cout << "\t" << id->name() << " = " << value.toString()
-// 			<< std::endl;
-// 	}
-// 	#endif
-
-	
-// 	const libcamera::Request::BufferMap &buffers = request->buffers();
-// 	for (auto bufferPair : buffers) {
-// 		libcamera::FrameBuffer *buffer = bufferPair.second;
-		
-
-// 		#if DEBUG_PRINT
-// 			const libcamera::FrameMetadata &metadata = buffer->metadata();
-// 			std::cout << " seq: " << std::setw(6) << std::setfill('0') << metadata.sequence
-// 				<< " timestamp: " << metadata.timestamp
-// 				<< " bytesused: ";
-
-// 			unsigned int nplane = 0;
-// 			for (const libcamera::FrameMetadata::Plane &plane : metadata.planes())
-// 			{
-// 				std::cout << plane.bytesused;
-// 				if (++nplane < metadata.planes().size())
-// 					std::cout << "/";
-// 			}
-	
-// 			std::cout << std::endl;
-// 		#endif
-
-// 		// IMAGE HERE!
-// 		auto item = mapped_buffers_.find(buffer);
-		
-		
-// 		if (item != mapped_buffers_.end()) {
-// 			std::vector<libcamera::Span<uint8_t>> img = item->second;
-			
-// 			latest_buffer = item->second[0].data();
-
-// 		} 
-// 	}
-
-// 	/* Re-queue the Request to the camera. */
-// 	request->reuse(libcamera::Request::ReuseBuffers);
 }

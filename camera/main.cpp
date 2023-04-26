@@ -10,9 +10,9 @@
 
 #include <camera.h>
 #include <rsics_server.h>
-#include <jpeg_converter.h>
+#include <compression.h>
 
-
+#include <buffer_pool.h>
 
 
 #define FRAME_COUNT_RANGE 5
@@ -34,7 +34,7 @@ int main() {
 		camera.start();	
 	});
 
-	rscamera::Compresser compresser (CAMERA_WIDTH, CAMERA_HEIGHT); 
+	rscamera::Compresser compresser (CAMERA_WIDTH, CAMERA_HEIGHT, camera.dimensions().stride); 
 
 
 	rsics::BroadcastServer server;
@@ -90,12 +90,24 @@ int main() {
 			uint8_t * frame_memory = frame_buffer[0].data();
 
 			uint64_t size;
+			
+
 			{
+				
 				std::unique_lock<std::mutex> lock(comp_mut);
+				auto compression_start = std::chrono::high_resolution_clock::now();
 				size = compresser.compress(frame_memory);
+
+
 				server.broadcast(compresser.buffer(), size);			
+				auto compression_end = std::chrono::high_resolution_clock::now();
+				
+				
+				// std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(compression_end - compression_start).count() << " - " << size << " \n";
 			}
-			std::cout << size / BYTES_PER_FRAME << std::endl;
+			
+
+			
 			// compresser.free_buffer(jpeg_buffer);
 			// if (encoder_buffer.size() / BYTES_PER_FRAME > FRAME_COUNT + FRAME_COUNT_RANGE) {
 			// 	compresser.dec_quality();
@@ -127,27 +139,12 @@ int main() {
 		cond.notify_one();
 		
 
-		// uint8_t * frame_memory = frame_buffer[0].data();
-		// for (uint32_t i = 0; i < camera.dimensions().height; i++, frame_memory += camera.dimensions().stride) {
-		// 	memmove(frame.ptr(i), frame_memory, camera.dimensions().width * 3);
-		// }
-		
-		
-		// cv::imencode(".jpg", frame, encoder_buffer,  jpeg_write_params);
-
-		// server.broadcast(encoder_buffer.data(), encoder_buffer.size());
-		// // std::cout << encoder_buffer.size() << " " <<  encoder_buffer.size() / 1465 << std::endl;			
-		// if (encoder_buffer.size() / BYTES_PER_FRAME > FRAME_COUNT + FRAME_COUNT_RANGE) {
-		// 	jpeg_optimisation -= FRAME_OPTIMISATION_JUMP; 
-		// } else if (encoder_buffer.size() / BYTES_PER_FRAME < FRAME_COUNT - FRAME_COUNT_RANGE) {
-		// 	jpeg_optimisation += FRAME_OPTIMISATION_JUMP; 
-		// }
 		
 
 		auto current = std::chrono::high_resolution_clock::now();
 		auto difference = std::chrono::duration_cast<std::chrono::seconds>(current - start).count();
 		uint64_t frames_per_second = frames_processed / difference; 
-		// std::cout << frames_per_second << "\n";
+		std::cout << frames_per_second << "\n";
 
 		camera.next_frame(req);
 		delete req;

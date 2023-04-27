@@ -113,7 +113,7 @@ void Camera::configure_camera() {
 	config_->validate();
 	camera_->configure(config_.get());
 
-	int64_t frame_time = 1000000 / 26;
+	int64_t frame_time = 1000000 / 25;
 
 	controls_.set(libcamera::controls::ExposureTime, 0.0);
 	controls_.set(libcamera::controls::Brightness, 0.0);

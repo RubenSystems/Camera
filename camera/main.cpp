@@ -15,16 +15,10 @@
 #include <buffer_pool.h>
 
 
-#define FRAME_COUNT_RANGE 5
+#define FRAME_COUNT_RANGE 2
 #define FRAME_OPTIMISATION_JUMP 2
-#define FRAME_COUNT 40
+#define FRAME_COUNT 60
 #define BYTES_PER_FRAME 1465
-
-
-
-
-
-
 
 
 int main() {
@@ -55,35 +49,6 @@ int main() {
 			std::vector<libcamera::Span<uint8_t>> frame = frame_pipeline.pop();
 			uint8_t * frame_memory = frame[0].data();
 			compresser.compress(frame_memory);
-
-			// 
-
-			// uint64_t size;
-			
-
-			// {
-				
-			// 	std::unique_lock<std::mutex> lock(comp_mut);
-			// 	auto compression_start = std::chrono::high_resolution_clock::now();
-			// 	size = compresser.compress(frame_memory);
-
-
-			// 	server.broadcast(compresser.buffer(), size);			
-			// 	auto compression_end = std::chrono::high_resolution_clock::now();
-				
-				
-			// 	// std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(compression_end - compression_start).count() << " - " << size << " \n";
-			// }
-			
-
-			
-			// compresser.free_buffer(jpeg_buffer);
-			// if (encoder_buffer.size() / BYTES_PER_FRAME > FRAME_COUNT + FRAME_COUNT_RANGE) {
-			// 	compresser.dec_quality();
-			// } else if (encoder_buffer.size() / BYTES_PER_FRAME < FRAME_COUNT - FRAME_COUNT_RANGE) {
-			// 	compresser.inc_quality();
-			// }
-
 		}
 	});
 	
@@ -96,12 +61,18 @@ int main() {
 		while (true) {
 			rscamera::CompressedObject frame = compresser.dequeue();
 			server.broadcast(frame.object, frame.size);
+			std::cout << frame.size/BYTES_PER_FRAME << std::endl;
+			if (frame.size / BYTES_PER_FRAME > FRAME_COUNT + FRAME_COUNT_RANGE) {
+				compresser.dec_quality();
+			} else if (frame.size / BYTES_PER_FRAME < FRAME_COUNT - FRAME_COUNT_RANGE) {
+				compresser.inc_quality();
+			}
+
 			frames_processed++;
 		}
 	});
 	
 	while (true) {
-		// this waits untill there is a complete request
 		
 		rscamera::CompletedRequest * req = camera.completed_request();
 
@@ -112,10 +83,6 @@ int main() {
 		std::vector<libcamera::Span<uint8_t>> frame_buffer = camera.buffer(buffer);
 
 		frame_pipeline.add(frame_buffer);
-		// std::unique_lock<std::mutex> lock(mut);
-		// send_frames_queue.push(frame_buffer);
-		// cond.notify_one();
-		
 
 		
 

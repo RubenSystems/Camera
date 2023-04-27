@@ -76,7 +76,7 @@ void Compresser::compress(uint8_t * source_image) {
 		width_, 
 		height_, 
 		stride_,
-		10,
+		quality,
 		0,
 		&buffer,
 		size
@@ -93,15 +93,10 @@ rscamera::CompressedObject Compresser::dequeue() {
 	return pipe_.pop();
 }
 
-
-void Compresser::free_buffer(uint8_t * compressed_buffer) {
-	// tjFree(compressed_buffer);
-}
-
 void Compresser::inc_quality () {
-	// quality += QUALITY_BUMP;
+	quality += QUALITY_BUMP;
 }
 
 void Compresser::dec_quality() {
-	// quality -= QUALITY_BUMP;
+	quality -= QUALITY_BUMP;
 }

@@ -19,3 +19,6 @@ BufferPool::~BufferPool() {
 	delete[] buffers_;
 }
 
+uint8_t * BufferPool::buffer(uint8_t idx) {
+	return buffers_[idx];
+}

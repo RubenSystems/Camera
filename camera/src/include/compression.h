@@ -1,36 +1,20 @@
 #pragma once
 
 #include <string>
-#include <turbojpeg.h>
-#include <opencv2/opencv.hpp>
+
 #include <jpeglib.h>
 #include <vector>
-/*
-
-	const int JPEG_QUALITY = 75;
-	const int COLOR_COMPONENTS = 3;
-	int _width = 1920;
-	int _height = 1080;
-	long unsigned int _jpegSize = 0;
-	unsigned char* _compressedImage = NULL; //!< Memory is allocated by tjCompress2 if _jpegSize == 0
-	unsigned char buffer[_width*_height*COLOR_COMPONENTS]; //!< Contains the uncompressed image
-
-	tjhandle _jpegCompressor = tjInitCompress();
-
-	tjCompress2(_jpegCompressor, buffer, _width, 0, _height, TJPF_RGB,
-			&_compressedImage, &_jpegSize, TJSAMP_444, JPEG_QUALITY,
-			TJFLAG_FASTDCT);
-
-	tjDestroy(_jpegCompressor);
-
-	//to free the memory allocated by TurboJPEG (either by tjAlloc(), 
-	//or by the Compress/Decompress) after you are done working on it:
-	tjFree(&_compressedImage);
-
-*/
+#include <pipeline.h>
+#include <buffer_pool.h>
 
 
 namespace rscamera {
+	struct CompressedObject {
+		uint8_t * object; 
+		size_t size; 
+
+	};
+
 	class Compresser {
 
 		public:
@@ -40,9 +24,7 @@ namespace rscamera {
 		
 		public: 
 
-			uint64_t compress(uint8_t * source_image);
-
-			uint8_t * buffer();
+			void compress(uint8_t * source_image);
 
 			void free_buffer(uint8_t * compressed_buffer);
 
@@ -50,16 +32,18 @@ namespace rscamera {
 
 			void dec_quality();
 
+			CompressedObject dequeue();
+
 
 		private:
 			static constexpr uint8_t QUALITY_BUMP = 1;
 			int quality = 30;
+			uint8_t current_buffer_ = 0; 
 			static constexpr int COLOR_COMPONENTS = 3;
-			uint8_t * buffer_;
-			size_t buffer_size_;
+			Pipeline<CompressedObject> pipe_;
 			uint32_t width_, height_, stride_; 
-			cv::Mat frame_; 
-			std::vector<int> params_;
-			// tjhandle compresser_;
+			BufferPool buffers_; 
+			std::mutex mutex_;
+			
 	};
 }

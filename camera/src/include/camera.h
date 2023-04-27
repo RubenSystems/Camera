@@ -14,7 +14,8 @@
 #include <libcamera/framebuffer_allocator.h>
 #include <libcamera/property_ids.h>
 
-#include <request_queue.h>
+#include <pipeline.h>
+#include <completed_request.h>
 
 #define SF 8
 #define CAMERA_HEIGHT  1080
@@ -82,7 +83,7 @@ namespace rscamera {
 				std::vector<libcamera::Span<uint8_t>>
 			> mapped_buffers_;
 			Dimensions dimensions_;
-			RequestQueue queue_;
+			Pipeline<CompletedRequest *> queue_;
 
 	};
 }

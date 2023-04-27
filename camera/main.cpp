@@ -39,72 +39,41 @@ int main() {
 
 	rsics::BroadcastServer server;
 	uint64_t frames_processed = 0; 
+	auto start = std::chrono::high_resolution_clock::now();
+
 
 	server.start();
 
-	// std::vector<uint8_t> encoder_buffer;
-	// std::vector<int> jpeg_write_params; 
-	// jpeg_write_params.resize(8, 0);
-	// jpeg_write_params[0] = cv::IMWRITE_JPEG_QUALITY;
-	// jpeg_write_params[1] = 70;
-	// jpeg_write_params[2] = cv::IMWRITE_JPEG_PROGRESSIVE;
-	// jpeg_write_params[3] = 0;
-	// jpeg_write_params[4] = cv::IMWRITE_JPEG_OPTIMIZE;
-	// jpeg_write_params[5] = 0;
-	// jpeg_write_params[6] = cv::IMWRITE_JPEG_RST_INTERVAL;
-	// jpeg_write_params[7] = 0;
-	// int & jpeg_optimisation = jpeg_write_params[1];
+	rscamera::Pipeline<std::vector<libcamera::Span<uint8_t>>> frame_pipeline;
 
-
-	// cv::Mat frame; 
-	// frame.create(camera.dimensions().height, camera.dimensions().width, CV_8UC3);
-
-	std::queue<std::vector<libcamera::Span<uint8_t>>> send_frames_queue;
-	std::condition_variable cond;
-	std::mutex mut; 
-	std::mutex comp_mut; 
-
-
-	std::thread send_thread([
-		&send_frames_queue, 
-		&cond, 
-		&mut, 
-		&comp_mut, 
-		&camera, 
-		&server,
-		&frames_processed,
+	std::thread compression_thread([
+		&frame_pipeline,
 		&compresser
-
-
 	](){
 		while (true) {
 			
-			std::vector<libcamera::Span<uint8_t>> frame_buffer;
-			{
-				std::unique_lock<std::mutex> lock(mut);
-				cond.wait(lock, [&send_frames_queue] { return !send_frames_queue.empty(); });
-				frame_buffer = send_frames_queue.front();
-				send_frames_queue.pop();
-			}
+			std::vector<libcamera::Span<uint8_t>> frame = frame_pipeline.pop();
+			uint8_t * frame_memory = frame[0].data();
+			compresser.compress(frame_memory);
 
-			uint8_t * frame_memory = frame_buffer[0].data();
+			// 
 
-			uint64_t size;
+			// uint64_t size;
 			
 
-			{
+			// {
 				
-				std::unique_lock<std::mutex> lock(comp_mut);
-				auto compression_start = std::chrono::high_resolution_clock::now();
-				size = compresser.compress(frame_memory);
+			// 	std::unique_lock<std::mutex> lock(comp_mut);
+			// 	auto compression_start = std::chrono::high_resolution_clock::now();
+			// 	size = compresser.compress(frame_memory);
 
 
-				server.broadcast(compresser.buffer(), size);			
-				auto compression_end = std::chrono::high_resolution_clock::now();
+			// 	server.broadcast(compresser.buffer(), size);			
+			// 	auto compression_end = std::chrono::high_resolution_clock::now();
 				
 				
-				// std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(compression_end - compression_start).count() << " - " << size << " \n";
-			}
+			// 	// std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(compression_end - compression_start).count() << " - " << size << " \n";
+			// }
 			
 
 			
@@ -114,15 +83,23 @@ int main() {
 			// } else if (encoder_buffer.size() / BYTES_PER_FRAME < FRAME_COUNT - FRAME_COUNT_RANGE) {
 			// 	compresser.inc_quality();
 			// }
-			frames_processed++;
 
 		}
 	});
 	
 
-
-	auto start = std::chrono::high_resolution_clock::now();
-
+	std::thread sending_thread([
+		&server,
+		&compresser,
+		&frames_processed
+	](){
+		while (true) {
+			rscamera::CompressedObject frame = compresser.dequeue();
+			server.broadcast(frame.object, frame.size);
+			frames_processed++;
+		}
+	});
+	
 	while (true) {
 		// this waits untill there is a complete request
 		
@@ -134,9 +111,10 @@ int main() {
 		libcamera::FrameBuffer * buffer = req->buffers[camera_stream];
 		std::vector<libcamera::Span<uint8_t>> frame_buffer = camera.buffer(buffer);
 
-		std::unique_lock<std::mutex> lock(mut);
-		send_frames_queue.push(frame_buffer);
-		cond.notify_one();
+		frame_pipeline.add(frame_buffer);
+		// std::unique_lock<std::mutex> lock(mut);
+		// send_frames_queue.push(frame_buffer);
+		// cond.notify_one();
 		
 
 		

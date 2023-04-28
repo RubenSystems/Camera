@@ -31,7 +31,7 @@ static void YUV420_to_JPEG_fast(const uint8_t *input, uint32_t width, uint32_t h
 
 	jpeg_set_defaults(&cinfo);
 	cinfo.raw_data_in = TRUE;
-	*jpeg_len = 0;
+	// *jpeg_len = 0;
 	jpeg_set_quality(&cinfo, quality, TRUE);
 	jpeg_mem_dest(&cinfo, jpeg_buffer, jpeg_len);
 	jpeg_start_compress(&cinfo, TRUE);
@@ -64,17 +64,15 @@ static void YUV420_to_JPEG_fast(const uint8_t *input, uint32_t width, uint32_t h
 }
 
 void Compresser::compress(uint8_t * source_image) {
-	// size_t current_buffer_index; 
-	// {
-	// 	std::unique_lock<std::mutex> lock(mutex_);
-	// 	current_buffer_index = current_buffer_;
-	// 	current_buffer_ = (current_buffer_ + 1) % 10;
-	// }
-	// uint8_t * buffer = buffers_.buffer(current_buffer_index);
-	// size_t size = buffers_.buffer_size();
+	size_t current_buffer_index; 
+	{
+		std::unique_lock<std::mutex> lock(mutex_);
+		current_buffer_index = current_buffer_;
+		current_buffer_ = (current_buffer_ + 1) % 10;
+	}
+	uint8_t * buffer = buffers_.buffer(current_buffer_index);
+	size_t size = buffers_.buffer_size();
 
-	uint8_t  * buffer = NULL;
-	size_t size = 0;
 
 	YUV420_to_JPEG_fast(
 		source_image,

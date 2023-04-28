@@ -1,1 +1,1 @@
-cd lib/RSiCS; make clean; make; cd ../../
+cd lib/RSiCS; make clean; make install -j4; cd ../../

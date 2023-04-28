@@ -20,6 +20,8 @@
 #define SF 8
 #define CAMERA_HEIGHT  1080
 #define CAMERA_WIDTH 1920 
+#define CAMERA_BUFFERS 1
+#define CAMERA_FPS 25
 #define DEBUG_PRINT 0
 
 namespace rscamera {

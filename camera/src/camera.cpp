@@ -106,14 +106,14 @@ void Camera::configure_camera() {
 
 	stream_config_->size.width = CAMERA_WIDTH;
 	stream_config_->size.height = CAMERA_HEIGHT; 
-	stream_config_->bufferCount = 4; 
+	stream_config_->bufferCount = CAMERA_BUFFERS; 
 	stream_config_->pixelFormat = libcamera::formats::YUV420;
 
 
 	config_->validate();
 	camera_->configure(config_.get());
 
-	int64_t frame_time = 1000000 / 25;
+	int64_t frame_time = 1000000 / CAMERA_FPS;
 
 	controls_.set(libcamera::controls::ExposureTime, 0.0);
 	controls_.set(libcamera::controls::Brightness, 0.0);

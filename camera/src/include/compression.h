@@ -12,7 +12,6 @@ namespace rscamera {
 	struct CompressedObject {
 		uint8_t * object; 
 		size_t size; 
-
 	};
 
 	class Compresser {

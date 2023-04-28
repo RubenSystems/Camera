@@ -4,7 +4,7 @@
 #include <queue>
 #include <condition_variable>
 
-
+#define QUEUE_MAX_SIZE 2
 
 namespace rscamera {
 	template <typename T>
@@ -16,6 +16,8 @@ namespace rscamera {
 
 			T pop();
 
+			size_t count();
+
 		private: 
 			std::queue<T> queue_;
 			std::mutex mutex_;
@@ -25,8 +27,15 @@ namespace rscamera {
 	template <typename T>
 	void Pipeline<T>::add(const T & new_request) {
 		std::unique_lock<std::mutex> lock(mutex_);
+		if (queue_.size() > QUEUE_MAX_SIZE) 
+			return;
 		queue_.push(new_request);
 		cond_.notify_one();
+	}
+
+	template <typename T> 
+	size_t Pipeline<T>::count() {
+		return queue_.size();
 	}
 
 	template <typename T>

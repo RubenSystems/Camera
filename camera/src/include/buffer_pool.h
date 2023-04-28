@@ -21,6 +21,8 @@ namespace rscamera {
 		public: 
 			uint8_t * buffer(uint8_t idx); 
 
+			size_t buffer_size();
+
 
 		private: 
 			// Try make congiguious

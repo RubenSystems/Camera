@@ -17,7 +17,7 @@
 
 #define FRAME_COUNT_RANGE 2
 #define FRAME_OPTIMISATION_JUMP 2
-#define FRAME_COUNT 60
+#define FRAME_COUNT 80
 #define BYTES_PER_FRAME 1465
 
 
@@ -61,7 +61,6 @@ int main() {
 		while (true) {
 			rscamera::CompressedObject frame = compresser.dequeue();
 			server.broadcast(frame.object, frame.size);
-			std::cout << frame.size/BYTES_PER_FRAME << std::endl;
 			if (frame.size / BYTES_PER_FRAME > FRAME_COUNT + FRAME_COUNT_RANGE) {
 				compresser.dec_quality();
 			} else if (frame.size / BYTES_PER_FRAME < FRAME_COUNT - FRAME_COUNT_RANGE) {
@@ -89,7 +88,8 @@ int main() {
 		auto current = std::chrono::high_resolution_clock::now();
 		auto difference = std::chrono::duration_cast<std::chrono::seconds>(current - start).count();
 		uint64_t frames_per_second = frames_processed / difference; 
-		std::cout << frames_per_second << "\n";
+		// std::cout << frames_per_second << "\n";
+		// std::cout << frame_pipeline.count() << std::endl;		
 
 		camera.next_frame(req);
 		delete req;

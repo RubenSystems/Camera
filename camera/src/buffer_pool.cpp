@@ -22,3 +22,7 @@ BufferPool::~BufferPool() {
 uint8_t * BufferPool::buffer(uint8_t idx) {
 	return buffers_[idx];
 }
+
+size_t BufferPool::buffer_size() {
+	return buffer_size_;
+}

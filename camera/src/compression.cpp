@@ -2,8 +2,8 @@
 #include <iostream>
 using namespace rscamera; 
 
-Compresser::Compresser(uint32_t width, uint32_t height, uint32_t stride):
-	width_(width), height_(height), stride_(stride), buffers_(10, width * height) {
+Compresser::Compresser(uint32_t width, uint32_t height, uint32_t stride, Pipeline<CompressedObject> * egress_pipe):
+	width_(width), height_(height), stride_(stride), buffers_(10, width * height), pipe_(egress_pipe) {
 }
 
 Compresser::~Compresser () {
@@ -85,7 +85,7 @@ void Compresser::compress(uint8_t * source_image) {
 		&size
 	);
 	
-	pipe_.add({
+	pipe_->add({
 		buffer,
 		size
 	});
@@ -93,7 +93,7 @@ void Compresser::compress(uint8_t * source_image) {
 }
 
 rscamera::CompressedObject Compresser::dequeue() {
-	return pipe_.pop();
+	return pipe_->pop();
 }
 
 void Compresser::inc_quality () {

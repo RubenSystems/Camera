@@ -69,7 +69,6 @@ bool Camera::has_buffer(libcamera::FrameBuffer * pointer) {
 std::vector<libcamera::Span<uint8_t>> Camera::buffer(libcamera::FrameBuffer * pointer) {
 	auto buf = mapped_buffers_.find(pointer);
 	return mapped_buffers_[pointer];
-		
 }
 
 void Camera::next_frame(rscamera::CompletedRequest * req) {
@@ -115,13 +114,13 @@ void Camera::configure_camera() {
 
 	int64_t frame_time = 1000000 / CAMERA_FPS;
 
-	controls_.set(libcamera::controls::ExposureTime, 0.0);
-	controls_.set(libcamera::controls::Brightness, 0.0);
-	controls_.set(libcamera::controls::AeExposureMode, libcamera::controls::ExposureNormal);
+	// controls_.set(libcamera::controls::ExposureTime, 0.0);
+	// controls_.set(libcamera::controls::Brightness, 0.0);
+	// controls_.set(libcamera::controls::AeExposureMode, libcamera::controls::ExposureNormal);
 	controls_.set(libcamera::controls::AwbMode, libcamera::controls::AwbAuto);
-	controls_.set(libcamera::controls::AeMeteringMode, libcamera::controls::MeteringMatrix);
-	controls_.set(libcamera::controls::AfMode, libcamera::controls::AfModeEnum::AfModeAuto);
-	controls_.set(libcamera::controls::AfTrigger, libcamera::controls::AfTriggerEnum::AfTriggerStart);
+	// controls_.set(libcamera::controls::AeMeteringMode, libcamera::controls::MeteringMatrix);
+	controls_.set(libcamera::controls::AfMode, libcamera::controls::AfModeEnum::AfModeContinuous);
+	// controls_.set(libcamera::controls::AfTrigger, libcamera::controls::AfTriggerEnum::AfTriggerStart);
 
 	controls_.set(
 		libcamera::controls::FrameDurationLimits, 

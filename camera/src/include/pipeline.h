@@ -4,7 +4,7 @@
 #include <queue>
 #include <condition_variable>
 
-#define QUEUE_MAX_SIZE 2
+#define QUEUE_MAX_SIZE 6
 
 namespace rscamera {
 	template <typename T>

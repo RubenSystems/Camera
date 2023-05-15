@@ -1,7 +1,7 @@
 #pragma once
 
 #include <transmit.h>
-#include <observe.h>
+#include <recieve.h>
 
 #include <thread>
 #include <string>
@@ -14,7 +14,7 @@ namespace rsics {
 
 		public:
 
-			Client(const std::string & uid, const Computer & comp, uint32_t ttl = 32) :
+			Client(const std::string & uid, const connection & comp, uint32_t ttl = 32) :
 				uid_(uid), addr_(comp), timestamp_(time(NULL)), ttl_(ttl) {}
 
 		public:
@@ -26,7 +26,7 @@ namespace rsics {
 				timestamp_ = time(NULL);
 			}
 
-			Computer * address() {
+			connection * address() {
 				return &addr_;
 			}
 
@@ -36,7 +36,7 @@ namespace rsics {
 
 		private:
 			std::string uid_; 
-			Computer addr_; 
+			connection addr_; 
 			unsigned long timestamp_; 
 			uint32_t ttl_; 
 	};
@@ -45,84 +45,35 @@ namespace rsics {
 
 		public: 
 
-			BroadcastServer() {
-				create_listener( "5253" , &listener_);
-			}
+			BroadcastServer();
 
-			~BroadcastServer() {
-				if (active_ != 0) {
-					stop();
-				}
-			}
+			~BroadcastServer();
 		
 		public:
 
-			void start() {
-				active_ = 1;
-				server_thread_ = std::thread([this](){
-					observe_with_context(&listener_, &active_, (const void *)this, client_connection);
-				});
-			}
+			void start();
 
-			void broadcast(void * data, size_t data_size) {
-				for (auto & client: clients) {
-					Client c = client.second;
-					if (c.valid()) {
-						transmit(data, data_size, c.address());
-					} else {
-						evict(c.uid());
-					}
-					
-				}
-			}
+			void broadcast(void * data, size_t data_size);
 
-			bool has_clients() {
-				return clients.size() > 0;
-			}
+			bool has_clients();
 
 		private:
-			static void client_connection(const void * s, struct Computer * client, void * message, int message_length) {
-				Computer c = *client;
-				BroadcastServer * server = (BroadcastServer *)s;
-				server->recieved_client(
-					std::string((const char *)message, message_length),
-					c
-				);
-				
-			}
+			static void client_connection(void * s, struct connection * client, message_type type, void * message, uint64_t message_length) ;
 
-			void add_client(const std::string & uid, const Computer & comp) {
-				Client new_client = Client(uid, comp);
-				std::cout << "NEW CLIENT: " << uid << "\n";
-				clients.emplace(uid, new_client);
-			}
+			void add_client(const std::string & uid, const connection & comp);
 
-			void renew_client(const std::string & uid, const Computer & comp) {
-				clients.at(uid).renew();
-			}
+			void renew_client(const std::string & uid, const connection & comp);
 
-			void recieved_client(const std::string & uid, const Computer & comp) {
-				if (clients.find(uid) == clients.end()) {
-					add_client(uid, comp);
-				} else {
-					renew_client(uid, comp);
-				}
-			}
+			void recieved_client(const std::string & uid, const connection & comp);
 
-			void evict(const std::string & uid ) {
-				std::cout << "EVICT: " << uid << "\n";
-				clients.erase(clients.find(uid));
-			}
+			void evict(const std::string & uid );
 
-			void stop(){
-				active_ = 0;
-				server_thread_.join();
-			}
+			void stop();
 
 		private: 
-			Computer listener_;
-			char active_; // boolean
-			std::unordered_map<std::string, Client> clients;
+			connection listener_;
+			bool active_; // boolean
+			std::unordered_map<std::string, Client *> clients;
 			std::thread server_thread_;
 	};
 }

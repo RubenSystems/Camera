@@ -51,7 +51,7 @@ class CompressionPool {
 				std::thread x; 
 				x = std::thread([ingress_pipeline, egress_pipeline, &core_mapping, &x, i, stride](){
 					// std::cout << core_mapping[i] << std::endl;
-					// set_thread_affinity(x, core_mapping[i]);
+					
 					rscamera::Compresser compresser (CAMERA_WIDTH, CAMERA_HEIGHT, stride, egress_pipeline); 
 					while (true) {
 						std::vector<libcamera::Span<uint8_t>> frame = ingress_pipeline->pop();
@@ -59,6 +59,7 @@ class CompressionPool {
 						compresser.compress(frame_memory);
 					}
 				});
+				set_thread_affinity(x, core_mapping[i]);
 				threads_.push_back(std::move(x));
 			}
 		}
@@ -89,52 +90,8 @@ int main() {
 
 	rscamera::Pipeline<std::vector<libcamera::Span<uint8_t>>> frame_pipeline;
 	rscamera::Pipeline<rscamera::CompressedObject> compression_pipeline; 
-	CompressionPool compression_pool(&frame_pipeline, &compression_pipeline, camera.dimensions().stride, {1,2,3});
-	// std::thread compression_thread; 
-	// compression_thread = std::thread([
-	// 	&frame_pipeline,
-	// 	&compresser,
-	// 	&compression_thread
-	// ](){
-	// 	set_thread_affinity(compression_thread, 1);
-	// 	while (true) {
-			
-	// 		std::vector<libcamera::Span<uint8_t>> frame = frame_pipeline.pop();
-	// 		uint8_t * frame_memory = frame[0].data();
-	// 		compresser.compress(frame_memory);
-	// 	}
-	// });
+	CompressionPool compression_pool(&frame_pipeline, &compression_pipeline, camera.dimensions().stride, {1, 2, 3});
 
-	// std::thread compression_thread2; 
-	// compression_thread2 = std::thread([
-	// 	&frame_pipeline,
-	// 	&compresser,
-	// 	&compression_thread2
-	// ](){
-	// 	set_thread_affinity(compression_thread2, 3);
-	// 	while (true) {
-			
-	// 		std::vector<libcamera::Span<uint8_t>> frame = frame_pipeline.pop();
-	// 		uint8_t * frame_memory = frame[0].data();
-	// 		compresser.compress(frame_memory);
-	// 	}
-	// });
-
-	// std::thread compression_thread3; 
-	// compression_thread3 = std::thread([
-	// 	&frame_pipeline,
-	// 	&compresser,
-	// 	&compression_thread3
-	// ](){
-	// 	set_thread_affinity(compression_thread3, 2);
-	// 	while (true) {
-			
-	// 		std::vector<libcamera::Span<uint8_t>> frame = frame_pipeline.pop();
-	// 		uint8_t * frame_memory = frame[0].data();
-	// 		compresser.compress(frame_memory);
-	// 	}
-	// });
-	
 	
 	std::thread sending_thread; 
 	sending_thread = std::thread([

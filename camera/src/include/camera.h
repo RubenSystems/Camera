@@ -61,7 +61,7 @@
 #define CAMERA_WIDTH 2328
 #define CAMERA_HEIGHT 1748
 #define CAMERA_BUFFERS 2
-#define CAMERA_FPS 25
+#define CAMERA_FPS 27
 #define DEBUG_PRINT 0
 
 namespace rscamera {

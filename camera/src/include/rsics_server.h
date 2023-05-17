@@ -7,6 +7,7 @@
 #include <string>
 #include <unordered_map>
 #include <time.h>
+#include <functional>
 
 namespace rsics {
 
@@ -57,6 +58,9 @@ namespace rsics {
 
 			bool has_clients();
 
+			void set_on_client_change(std::function<void (int)> handler); 
+
+
 		private:
 			static void client_connection(void * s, struct connection * client, message_type type, void * message, uint64_t message_length) ;
 
@@ -70,10 +74,14 @@ namespace rsics {
 
 			void stop();
 
+
 		private: 
 			connection listener_;
 			bool active_; // boolean
 			std::unordered_map<std::string, Client *> clients;
 			std::thread server_thread_;
+
+			// Event handlers 
+			std::function<void(int)> on_client_change_;
 	};
 }

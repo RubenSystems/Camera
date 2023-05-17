@@ -112,20 +112,25 @@ void Camera::configure_camera() {
 	config_->validate();
 	camera_->configure(config_.get());
 
-	int64_t frame_time = 1000000 / CAMERA_FPS;
+	// int64_t frame_time = 1000000 / CAMERA_FPS;
 
 	// controls_.set(libcamera::controls::ExposureTime, 0.0);
 	// controls_.set(libcamera::controls::Brightness, 0.0);
 	// controls_.set(libcamera::controls::AeExposureMode, libcamera::controls::ExposureNormal);
 	controls_.set(libcamera::controls::AwbMode, libcamera::controls::AwbAuto);
-	// controls_.set(libcamera::controls::AeMeteringMode, libcamera::controls::MeteringMatrix);
+	controls_.set(libcamera::controls::AeMeteringMode, libcamera::controls::MeteringMatrix);
 	controls_.set(libcamera::controls::AfMode, libcamera::controls::AfModeEnum::AfModeContinuous);
 	// controls_.set(libcamera::controls::AfTrigger, libcamera::controls::AfTriggerEnum::AfTriggerStart);
 
-	controls_.set(
-		libcamera::controls::FrameDurationLimits, 
-		libcamera::Span<const int64_t, 2>({ frame_time, frame_time })
-	);
+	set_idle();
+}
+
+void Camera::set_idle() {
+	set_framerate(CAMERA_FPS_IDLE);
+}
+
+void Camera::set_streaming() {
+	set_framerate(CAMERA_FPS_STREAM);
 }
 
 void Camera::get_dimensions() {
@@ -138,6 +143,14 @@ void Camera::get_dimensions() {
 	dimensions_ = ret;
 
 }
+
+void Camera::set_framerate(int fps) {
+	int64_t frame_time = 1000000 / fps;
+	controls_.set(
+		libcamera::controls::FrameDurationLimits, 
+		libcamera::Span<const int64_t, 2>({ frame_time, frame_time })
+	);
+} 
 
 
 void Camera::create_buffer_allocator() {

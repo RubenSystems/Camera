@@ -32,9 +32,7 @@ void set_thread_affinity(std::thread & thread, int core) {
 		sizeof(cpu_set_t), 
 		&cpuset
 	);
-	std::cout << rc << std::endl;
 	if (rc < 0) {
-
 		perror("THREAD_AFFINITY: ");
 		exit(0);
 	}
@@ -82,6 +80,15 @@ int main() {
 
 
 	rsics::BroadcastServer server;
+
+	server.set_on_client_change([&camera](int no_clients){
+		if (no_clients == 0) {
+			camera.set_idle();
+		} else {
+			camera.set_streaming();
+		}
+	});
+
 	uint64_t frames_processed = 0; 
 	auto start = std::chrono::high_resolution_clock::now();
 
@@ -100,7 +107,7 @@ int main() {
 		&frames_processed,
 		&sending_thread
 	](){
-		set_thread_affinity(sending_thread, 2);
+		set_thread_affinity(sending_thread, 0);
 		while (true) {
 			rscamera::CompressedObject frame = compression_pipeline.pop();
 			server.broadcast(frame.object, frame.size);
@@ -130,7 +137,7 @@ int main() {
 		auto current = std::chrono::high_resolution_clock::now();
 		auto difference = std::chrono::duration_cast<std::chrono::seconds>(current - start).count();
 		uint64_t frames_per_second = frames_processed / difference; 
-		std::cout << frames_per_second << "\n";
+		// std::cout << frames_per_second << "\n";
 		// std::cout << frame_pipeline.count() << std::endl;		
 
 		camera.next_frame(req);

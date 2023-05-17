@@ -61,7 +61,10 @@
 #define CAMERA_WIDTH 2328
 #define CAMERA_HEIGHT 1748
 #define CAMERA_BUFFERS 2
-#define CAMERA_FPS 27
+#define CAMERA_FPS_STREAM 25
+#define CAMERA_FPS_IDLE 25
+
+
 #define DEBUG_PRINT 0
 
 namespace rscamera {
@@ -93,7 +96,14 @@ namespace rscamera {
 
 			void next_frame(CompletedRequest * req);
 
+			void set_idle();
+
+			void set_streaming();
+
+
 		private:
+
+			void set_framerate(int fps);
 
 			// Initalisation/configuration
 			void init_camera();

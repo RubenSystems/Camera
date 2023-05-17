@@ -77,15 +77,21 @@ void BroadcastServer::recieved_client(const std::string & uid, const connection 
 	} else {
 		renew_client(uid, comp);
 	}
+	on_client_change_(clients.size());
 }
 
 void BroadcastServer::evict(const std::string & uid ) {
 	delete clients[uid];
 	clients.erase(uid);
+	on_client_change_(clients.size());
 	std::cout << "EVICT: " << uid << "\n";
 }
 
 void BroadcastServer::stop(){
 	active_ = 0;
 	server_thread_.join();
+}
+
+void BroadcastServer::set_on_client_change(std::function<void (int)> handler) {
+	on_client_change_ = handler;
 }

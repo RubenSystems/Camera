@@ -44,25 +44,26 @@ class CompressionPool {
 			rscamera::Pipeline<std::vector<libcamera::Span<uint8_t>>> * ingress_pipeline, 
 			rscamera::Pipeline<rscamera::CompressedObject> * egress_pipeline, 
 			int stride, 
-			const std::vector<int> & core_mapping ) {
-			for (int i = 0; i < core_mapping.size(); i ++) {
-				std::thread x; 
-				x = std::thread([ingress_pipeline, egress_pipeline, &core_mapping, &x, i, stride](){
-					// std::cout << core_mapping[i] << std::endl;
+			const std::vector<int> & core_mapping ): threads_(core_mapping.size()) {
+
+
+			for (int i = 0; i < (int)core_mapping.size(); i ++) {
+				threads_[i] = std::thread([ingress_pipeline, egress_pipeline, stride](){
 					
-					rscamera::Compresser compresser (CAMERA_WIDTH, CAMERA_HEIGHT, stride, egress_pipeline); 
+					rscamera::Compresser compresser_(CAMERA_WIDTH, CAMERA_HEIGHT, stride, egress_pipeline);
 					while (true) {
 						std::vector<libcamera::Span<uint8_t>> frame = ingress_pipeline->pop();
 						uint8_t * frame_memory = frame[0].data();
-						compresser.compress(frame_memory);
+						compresser_.compress(frame_memory);
 					}
 				});
-				set_thread_affinity(x, core_mapping[i]);
-				threads_.push_back(std::move(x));
+				set_thread_affinity(threads_[i], core_mapping[i]);
 			}
 		}
+
 	private: 
 		std::vector<std::thread> threads_;  
+		
 		
 };
 
@@ -97,7 +98,7 @@ int main() {
 
 	rscamera::Pipeline<std::vector<libcamera::Span<uint8_t>>> frame_pipeline;
 	rscamera::Pipeline<rscamera::CompressedObject> compression_pipeline; 
-	CompressionPool compression_pool(&frame_pipeline, &compression_pipeline, camera.dimensions().stride, {1, 2, 3});
+	CompressionPool compression_pool(&frame_pipeline, &compression_pipeline, camera.dimensions().stride, {0, 1, 2, 3});
 
 	
 	std::thread sending_thread; 
@@ -107,7 +108,6 @@ int main() {
 		&frames_processed,
 		&sending_thread
 	](){
-		set_thread_affinity(sending_thread, 0);
 		while (true) {
 			rscamera::CompressedObject frame = compression_pipeline.pop();
 			server.broadcast(frame.object, frame.size);

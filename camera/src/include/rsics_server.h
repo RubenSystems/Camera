@@ -20,7 +20,7 @@ namespace rsics {
 
 		public:
 			bool valid() {
-				return timestamp_ + ttl_ > time(NULL);
+				return timestamp_ + ttl_ > (uint64_t)time(NULL);
 			}
 
 			void renew() {

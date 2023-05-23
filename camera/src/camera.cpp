@@ -115,7 +115,7 @@ void Camera::configure_camera() {
 	// int64_t frame_time = 1000000 / CAMERA_FPS;
 
 	// controls_.set(libcamera::controls::ExposureTime, 0.0);
-	// controls_.set(libcamera::controls::Brightness, 0.0);
+	// controls_.set(libcamera::controls::Brightness, 0.2);
 	// controls_.set(libcamera::controls::AeExposureMode, libcamera::controls::ExposureNormal);
 	controls_.set(libcamera::controls::AwbMode, libcamera::controls::AwbAuto);
 	controls_.set(libcamera::controls::AeMeteringMode, libcamera::controls::MeteringMatrix);
@@ -196,7 +196,7 @@ void Camera::configure_requests() {
 			throw std::runtime_error("[CAMERA] - cannot set buffer");
 		}
 
-		libcamera::ControlList &controls = request->controls();
+		// libcamera::ControlList &controls = request->controls();
 		// controls.set(libcamera::controls::Brightness, 0.5);
 		requests_.push_back(std::move(request));
 	}

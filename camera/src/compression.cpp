@@ -1,69 +1,67 @@
 #include <compression.h>
 #include <iostream>
+#include <chrono>
 using namespace rscamera; 
 
 Compresser::Compresser(uint32_t width, uint32_t height, uint32_t stride, Pipeline<CompressedObject> * egress_pipe):
-	width_(width), height_(height), stride_(stride), buffers_(20, width * height), pipe_(egress_pipe) {
+	width_(width), height_(height), stride_(stride), pipe_(egress_pipe), buffers_(10, width * height)  {	
+
+	cinfo_.err = jpeg_std_error(&jerr);
+	jpeg_create_compress(&cinfo_);
+
+
+
 }
 
 Compresser::~Compresser () {
 	// tjDestroy(compresser_);
 	// delete [] buffer_;
+	jpeg_destroy_compress(&cinfo_);
 }
 
 
+// From libcameara apps:
+void Compresser::yuv420_to_jpeg(const uint8_t *input, uint8_t **output, size_t * jpeg_len) {
+	cinfo_.image_width = width_;
+	cinfo_.image_height = height_;
+	cinfo_.input_components = 3;
+	cinfo_.in_color_space = JCS_YCbCr;
+	cinfo_.restart_interval = 0;
 
-static void YUV420_to_JPEG_fast(const uint8_t *input, uint32_t width, uint32_t height, uint32_t stride,
-								const int quality, const unsigned int restart,
-								uint8_t **jpeg_buffer, size_t * jpeg_len)
-{
-	struct jpeg_compress_struct cinfo;
-	struct jpeg_error_mgr jerr;
+	jpeg_set_defaults(&cinfo_);
+	cinfo_.raw_data_in = TRUE;
+	jpeg_set_quality(&cinfo_, quality, TRUE);
+	jpeg_mem_dest(&cinfo_, output, jpeg_len);
+	jpeg_start_compress(&cinfo_, TRUE);
 
-	cinfo.err = jpeg_std_error(&jerr);
-	jpeg_create_compress(&cinfo);
-
-	cinfo.image_width = width;
-	cinfo.image_height = height;
-	cinfo.input_components = 3;
-	cinfo.in_color_space = JCS_YCbCr;
-	cinfo.restart_interval = restart;
-
-	jpeg_set_defaults(&cinfo);
-	cinfo.raw_data_in = TRUE;
-	// *jpeg_len = 0;
-	jpeg_set_quality(&cinfo, quality, TRUE);
-	jpeg_mem_dest(&cinfo, jpeg_buffer, jpeg_len);
-	jpeg_start_compress(&cinfo, TRUE);
-
-	int stride2 = stride / 2;
+	int stride2 = stride_ / 2;
 	uint8_t *Y = (uint8_t *)input;
-	uint8_t *U = (uint8_t *)Y + stride * height;
-	uint8_t *V = (uint8_t *)U + stride2 * (height / 2);
-	uint8_t *Y_max = U - stride;
+	uint8_t *U = (uint8_t *)Y + stride_ * height_;
+	uint8_t *V = (uint8_t *)U + stride2 * (height_ / 2);
+	uint8_t *Y_max = U - stride_;
 	uint8_t *U_max = V - stride2;
-	uint8_t *V_max = U_max + stride2 * (height / 2);
+	uint8_t *V_max = U_max + stride2 * (height_ / 2);
 
 	JSAMPROW y_rows[16];
 	JSAMPROW u_rows[8];
 	JSAMPROW v_rows[8];
 
-	for (uint8_t *Y_row = Y, *U_row = U, *V_row = V; cinfo.next_scanline < height;)
+	for (uint8_t *Y_row = Y, *U_row = U, *V_row = V; cinfo_.next_scanline < height_;)
 	{
-		for (int i = 0; i < 16; i++, Y_row += stride)
+		for (int i = 0; i < 16; i++, Y_row += stride_)
 			y_rows[i] = std::min(Y_row, Y_max);
 		for (int i = 0; i < 8; i++, U_row += stride2, V_row += stride2)
 			u_rows[i] = std::min(U_row, U_max), v_rows[i] = std::min(V_row, V_max);
 
 		JSAMPARRAY rows[] = { y_rows, u_rows, v_rows };
-		jpeg_write_raw_data(&cinfo, rows, 16);
+		jpeg_write_raw_data(&cinfo_, rows, 16);
 	}
 
-	jpeg_finish_compress(&cinfo);
-	jpeg_destroy_compress(&cinfo);
+	jpeg_finish_compress(&cinfo_);
 }
 
 void Compresser::compress(uint8_t * source_image) {
+
 	size_t current_buffer_index; 
 	{
 		std::unique_lock<std::mutex> lock(mutex_);
@@ -72,19 +70,14 @@ void Compresser::compress(uint8_t * source_image) {
 	}
 	uint8_t * buffer = buffers_.buffer(current_buffer_index);
 	size_t size = buffers_.buffer_size();
-
-
-	YUV420_to_JPEG_fast(
+	
+	yuv420_to_jpeg(
 		source_image,
-		width_, 
-		height_, 
-		stride_,
-		quality,
-		0,
 		&buffer,
 		&size
 	);
-	
+
+
 	pipe_->add({
 		buffer,
 		size

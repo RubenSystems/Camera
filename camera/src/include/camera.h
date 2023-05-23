@@ -26,6 +26,7 @@
 	'fps': 120.0,
 	'size': (1280, 720),
 	'unpacked': 'SRGGB10'},
+
 	{'bit_depth': 10,
 	'crop_limits': (408, 674, 3840, 2160),
 	'exposure_limits': (282, 118430097, None),
@@ -33,6 +34,7 @@
 	'fps': 60.05,
 	'size': (1920, 1080),
 	'unpacked': 'SRGGB10'},
+
 	{'bit_depth': 10,
 	'crop_limits': (0, 0, 4656, 3496),
 	'exposure_limits': (305, 127960311, None),
@@ -40,6 +42,7 @@
 	'fps': 30.0,
 	'size': (2328, 1748),
 	'unpacked': 'SRGGB10'},
+
 	{'bit_depth': 10,
 	'crop_limits': (408, 672, 3840, 2160),
 	'exposure_limits': (491, 206049113, None),
@@ -47,6 +50,7 @@
 	'fps': 18.0,
 	'size': (3840, 2160),
 	'unpacked': 'SRGGB10'},
+
 	{'bit_depth': 10,
 	'crop_limits': (0, 0, 4656, 3496),
 	'exposure_limits': (592, 248567756, None),
@@ -58,11 +62,11 @@
 
 */
 
-#define CAMERA_WIDTH 2328
-#define CAMERA_HEIGHT 1748
+#define CAMERA_WIDTH 1280
+#define CAMERA_HEIGHT 720
 #define CAMERA_BUFFERS 2
-#define CAMERA_FPS_STREAM 25
-#define CAMERA_FPS_IDLE 25
+#define CAMERA_FPS_STREAM 30
+#define CAMERA_FPS_IDLE 30
 
 
 #define DEBUG_PRINT 0

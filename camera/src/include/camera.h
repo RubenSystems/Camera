@@ -14,132 +14,121 @@
 #include <libcamera/framebuffer_allocator.h>
 #include <libcamera/property_ids.h>
 
-#include <pipeline.h>
 #include <completed_request.h>
+#include <pipeline.h>
+#include <config.h>
 
 /*
-	=== Modes for the camera === 
-	[{'bit_depth': 10,
-	'crop_limits': (1048, 1042, 2560, 1440),
-	'exposure_limits': (203, 85182424, None),
-	'format': SRGGB10_CSI2P,
-	'fps': 120.0,
-	'size': (1280, 720),
-	'unpacked': 'SRGGB10'},
+        === Modes for the camera ===
+        [{'bit_depth': 10,
+        'crop_limits': (1048, 1042, 2560, 1440),
+        'exposure_limits': (203, 85182424, None),
+        'format': SRGGB10_CSI2P,
+        'fps': 120.0,
+        'size': (1280, 720),
+        'unpacked': 'SRGGB10'},
 
-	{'bit_depth': 10,
-	'crop_limits': (408, 674, 3840, 2160),
-	'exposure_limits': (282, 118430097, None),
-	'format': SRGGB10_CSI2P,
-	'fps': 60.05,
-	'size': (1920, 1080),
-	'unpacked': 'SRGGB10'},
+        {'bit_depth': 10,
+        'crop_limits': (408, 674, 3840, 2160),
+        'exposure_limits': (282, 118430097, None),
+        'format': SRGGB10_CSI2P,
+        'fps': 60.05,
+        'size': (1920, 1080),
+        'unpacked': 'SRGGB10'},
 
-	{'bit_depth': 10,
-	'crop_limits': (0, 0, 4656, 3496),
-	'exposure_limits': (305, 127960311, None),
-	'format': SRGGB10_CSI2P,
-	'fps': 30.0,
-	'size': (2328, 1748),
-	'unpacked': 'SRGGB10'},
+        {'bit_depth': 10,
+        'crop_limits': (0, 0, 4656, 3496),
+        'exposure_limits': (305, 127960311, None),
+        'format': SRGGB10_CSI2P,
+        'fps': 30.0,
+        'size': (2328, 1748),
+        'unpacked': 'SRGGB10'},
 
-	{'bit_depth': 10,
-	'crop_limits': (408, 672, 3840, 2160),
-	'exposure_limits': (491, 206049113, None),
-	'format': SRGGB10_CSI2P,
-	'fps': 18.0,
-	'size': (3840, 2160),
-	'unpacked': 'SRGGB10'},
+        {'bit_depth': 10,
+        'crop_limits': (408, 672, 3840, 2160),
+        'exposure_limits': (491, 206049113, None),
+        'format': SRGGB10_CSI2P,
+        'fps': 18.0,
+        'size': (3840, 2160),
+        'unpacked': 'SRGGB10'},
 
-	{'bit_depth': 10,
-	'crop_limits': (0, 0, 4656, 3496),
-	'exposure_limits': (592, 248567756, None),
-	'format': SRGGB10_CSI2P,
-	'fps': 9.0,
-	'size': (4656, 3496),
-	'unpacked': 'SRGGB10'
-	}]
+        {'bit_depth': 10,
+        'crop_limits': (0, 0, 4656, 3496),
+        'exposure_limits': (592, 248567756, None),
+        'format': SRGGB10_CSI2P,
+        'fps': 9.0,
+        'size': (4656, 3496),
+        'unpacked': 'SRGGB10'
+        }]
 
 */
 
-#define CAMERA_WIDTH 1280
-#define CAMERA_HEIGHT 720
-#define CAMERA_BUFFERS 2
-#define CAMERA_FPS_STREAM 30
-#define CAMERA_FPS_IDLE 30
 
-
-#define DEBUG_PRINT 0
 
 namespace rscamera {
 
+struct Dimensions {
+  uint32_t width, height, stride;
+};
 
-	struct Dimensions {
-		uint32_t width, height, stride;
-	};
+class Camera {
 
-	class Camera {
+public:
+  Camera();
 
-		public:
-			Camera();
+  ~Camera();
 
-			~Camera();
+public:
+  void start();
 
-		public: 
-			void start();
+  Dimensions dimensions();
 
-			Dimensions dimensions();
+  libcamera::Stream *stream();
 
-			libcamera::Stream * stream();
+  CompletedRequest *completed_request();
 
-			CompletedRequest * completed_request();
+  bool has_buffer(libcamera::FrameBuffer *pointer);
 
-			bool has_buffer(libcamera::FrameBuffer * pointer);
+  std::vector<libcamera::Span<uint8_t>> buffer(libcamera::FrameBuffer *pointer);
 
-			std::vector<libcamera::Span<uint8_t>> buffer(libcamera::FrameBuffer * pointer);
+  void next_frame(CompletedRequest *req);
 
-			void next_frame(CompletedRequest * req);
+  void set_idle();
 
-			void set_idle();
+  void set_streaming();
 
-			void set_streaming();
+private:
+  void set_framerate(int fps);
 
+  // Initalisation/configuration
+  void init_camera();
 
-		private:
+  void configure_camera();
 
-			void set_framerate(int fps);
+  void create_buffer_allocator();
 
-			// Initalisation/configuration
-			void init_camera();
+  void configure_requests();
 
-			void configure_camera();
+  // Event handlers
+  void request_complete(libcamera::Request *request);
 
-			void create_buffer_allocator();
+  void processRequest(libcamera::Request *request);
 
-			void configure_requests();
-			
-			// Event handlers
-			void request_complete(libcamera::Request *request);
+  void get_dimensions();
 
-			void processRequest(libcamera::Request *request);
-
-			void get_dimensions();
-		
-		private:
-			libcamera::CameraManager * manager_;
-			std::shared_ptr<libcamera::Camera> camera_ = nullptr;
-			libcamera::ControlList controls_;
-			std::unique_ptr<libcamera::CameraConfiguration> config_;
-			libcamera::StreamConfiguration * stream_config_;
-			libcamera::FrameBufferAllocator * allocator_;
-			std::vector<std::unique_ptr<libcamera::Request>> requests_;
-			libcamera::Stream * stream_;
-			std::unordered_map<
-				libcamera::FrameBuffer *, 
-				std::vector<libcamera::Span<uint8_t>>
-			> mapped_buffers_;
-			Dimensions dimensions_;
-			Pipeline<CompletedRequest *> queue_;
-
-	};
-}
+private:
+  libcamera::CameraManager *manager_;
+  std::shared_ptr<libcamera::Camera> camera_ = nullptr;
+  libcamera::ControlList controls_;
+  std::unique_ptr<libcamera::CameraConfiguration> config_;
+  libcamera::StreamConfiguration *stream_config_;
+  libcamera::FrameBufferAllocator *allocator_;
+  std::vector<std::unique_ptr<libcamera::Request>> requests_;
+  libcamera::Stream *stream_;
+  std::unordered_map<libcamera::FrameBuffer *,
+                     std::vector<libcamera::Span<uint8_t>>>
+      mapped_buffers_;
+  Dimensions dimensions_;
+  Pipeline<CompletedRequest *> queue_;
+};
+} // namespace rscamera

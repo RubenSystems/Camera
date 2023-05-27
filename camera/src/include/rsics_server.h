@@ -1,87 +1,76 @@
 #pragma once
 
-#include <transmit.h>
 #include <recieve.h>
+#include <transmit.h>
 
-#include <thread>
-#include <string>
-#include <unordered_map>
-#include <time.h>
 #include <functional>
+#include <string>
+#include <thread>
+#include <time.h>
+#include <unordered_map>
 
 namespace rsics {
 
-	class Client {
+class Client {
 
-		public:
+public:
+  Client(const std::string &uid, const connection &comp, uint32_t ttl = 32)
+      : uid_(uid), addr_(comp), timestamp_(time(NULL)), ttl_(ttl) {}
 
-			Client(const std::string & uid, const connection & comp, uint32_t ttl = 32) :
-				uid_(uid), addr_(comp), timestamp_(time(NULL)), ttl_(ttl) {}
+public:
+  bool valid() { return timestamp_ + ttl_ > (uint64_t)time(NULL); }
 
-		public:
-			bool valid() {
-				return timestamp_ + ttl_ > (uint64_t)time(NULL);
-			}
+  void renew() { timestamp_ = time(NULL); }
 
-			void renew() {
-				timestamp_ = time(NULL);
-			}
+  connection *address() { return &addr_; }
 
-			connection * address() {
-				return &addr_;
-			}
+  std::string uid() { return uid_; }
 
-			std::string uid() {
-				return uid_;
-			}
+private:
+  std::string uid_;
+  connection addr_;
+  unsigned long timestamp_;
+  uint32_t ttl_;
+};
 
-		private:
-			std::string uid_; 
-			connection addr_; 
-			unsigned long timestamp_; 
-			uint32_t ttl_; 
-	};
+class BroadcastServer {
 
-	class BroadcastServer {
+public:
+  BroadcastServer();
 
-		public: 
+  ~BroadcastServer();
 
-			BroadcastServer();
+public:
+  void start();
 
-			~BroadcastServer();
-		
-		public:
+  void broadcast(void *data, size_t data_size);
 
-			void start();
+  bool has_clients();
 
-			void broadcast(void * data, size_t data_size);
+  void set_on_client_change(std::function<void(int)> handler);
 
-			bool has_clients();
+private:
+  static void client_connection(void *s, struct connection *client,
+                                message_type type, void *message,
+                                uint64_t message_length);
 
-			void set_on_client_change(std::function<void (int)> handler); 
+  void add_client(const std::string &uid, const connection &comp);
 
+  void renew_client(const std::string &uid, const connection &comp);
 
-		private:
-			static void client_connection(void * s, struct connection * client, message_type type, void * message, uint64_t message_length) ;
+  void recieved_client(const std::string &uid, const connection &comp);
 
-			void add_client(const std::string & uid, const connection & comp);
+  void evict(const std::string &uid);
 
-			void renew_client(const std::string & uid, const connection & comp);
+  void stop();
 
-			void recieved_client(const std::string & uid, const connection & comp);
+private:
+  connection listener_;
+  bool active_; // boolean
+  std::unordered_map<std::string, Client *> clients;
+  std::thread server_thread_;
 
-			void evict(const std::string & uid );
-
-			void stop();
-
-
-		private: 
-			connection listener_;
-			bool active_; // boolean
-			std::unordered_map<std::string, Client *> clients;
-			std::thread server_thread_;
-
-			// Event handlers 
-			std::function<void(int)> on_client_change_;
-	};
-}
+  // Event handlers
+  std::function<void(int)> on_client_change_;
+};
+} // namespace rsics

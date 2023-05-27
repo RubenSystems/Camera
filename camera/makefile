@@ -19,7 +19,7 @@ main: $(OBJS)
 	$(CXX) $(CPPFLAGS) $(INCLUDES) -c $< -o $@
 
 format:
-	clang-format -i -style="file:clang-format.txt" src/*.cpp src/include/*.h
+	clang-format -i -style=file main.cpp src/*.cpp src/include/*.h
 
 clean: 
 	rm  $(TARGET) $(OBJS)

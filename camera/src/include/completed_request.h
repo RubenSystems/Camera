@@ -8,24 +8,20 @@
 #include <libcamera/framebuffer_allocator.h>
 #include <libcamera/property_ids.h>
 
-
-
 namespace rscamera {
 
-	struct CompletedRequest {
+struct CompletedRequest {
 
-		CompletedRequest(unsigned int count, libcamera::Request *r): 
-			counter(count), 
-			buffers(r->buffers()), 
-			metadata(r->metadata()), 
-			request(r) {
-			r->reuse();
-		}
-		unsigned int counter;
-		libcamera::Request::BufferMap buffers;
-		libcamera::ControlList metadata;
-		libcamera::Request *request;
-		float framerate;
-	};
+  CompletedRequest(unsigned int count, libcamera::Request *r)
+      : counter(count), buffers(r->buffers()), metadata(r->metadata()),
+        request(r) {
+    r->reuse();
+  }
+  unsigned int counter;
+  libcamera::Request::BufferMap buffers;
+  libcamera::ControlList metadata;
+  libcamera::Request *request;
+  float framerate;
+};
 
-}
+} // namespace rscamera

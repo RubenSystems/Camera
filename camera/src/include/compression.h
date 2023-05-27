@@ -2,63 +2,59 @@
 
 #include <string>
 
-#include <jpeglib.h>
-#include <vector>
-#include <pipeline.h>
 #include <buffer_pool.h>
-
+#include <jpeglib.h>
+#include <pipeline.h>
+#include <vector>
+#include <config.h>
 
 namespace rscamera {
-	struct CompressedObject {
-		uint8_t * object; 
-		size_t size; 
-	};
+struct CompressedObject {
+  uint8_t *object;
+  size_t size;
+};
 
-	class Compresser {
+class Compresser {
 
-		public:
-			Compresser(uint32_t width, uint32_t height, uint32_t stride, Pipeline<CompressedObject> *);
+public:
+  Compresser(uint32_t width, uint32_t height, uint32_t stride,
+             Pipeline<CompressedObject> *);
 
-			Compresser(const Compresser & ) = delete; 
-			Compresser & operator = (const Compresser &) = delete;
-			
-			Compresser (Compresser &&) = delete; 
-			Compresser & operator =(Compresser &&) = delete;
+  Compresser(const Compresser &) = delete;
+  Compresser &operator=(const Compresser &) = delete;
 
-			~Compresser ();
-		
-		public: 
+  Compresser(Compresser &&) = delete;
+  Compresser &operator=(Compresser &&) = delete;
 
-			void compress(uint8_t * source_image);
+  ~Compresser();
 
-			void inc_quality ();
+public:
+  void compress(uint8_t *source_image);
 
-			void dec_quality();
+  void inc_quality();
 
-			CompressedObject dequeue();
+  void dec_quality();
 
-		private:
-			void yuv420_to_jpeg( const uint8_t *input,
-								uint8_t **jpeg_buffer, size_t * jpeg_len);
+  CompressedObject dequeue();
 
+private:
+  void yuv420_to_jpeg(const uint8_t *input, uint8_t **jpeg_buffer,
+                      size_t *jpeg_len);
 
-		private:
-			static constexpr uint8_t QUALITY_BUMP = 1;
-			static constexpr int COLOR_COMPONENTS = 3;
+private:
+  static constexpr uint8_t QUALITY_BUMP = 1;
+  static constexpr int COLOR_COMPONENTS = 3;
 
-			struct jpeg_compress_struct cinfo_;
-			struct jpeg_error_mgr jerr;
-			
+  struct jpeg_compress_struct cinfo_;
+  struct jpeg_error_mgr jerr;
 
-			int quality = 70;
-			uint8_t current_buffer_ = 0; 
-			
-			uint32_t width_, height_, stride_; 
-			Pipeline<CompressedObject> * pipe_;
-			
-			BufferPool buffers_; 
-			std::mutex mutex_;
-			
-			
-	};
-}
+  int quality = COMPRESSION_QUALITY;
+  uint8_t current_buffer_ = 0;
+
+  uint32_t width_, height_, stride_;
+  Pipeline<CompressedObject> *pipe_;
+
+  BufferPool buffers_;
+  std::mutex mutex_;
+};
+} // namespace rscamera

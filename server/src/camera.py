@@ -1,10 +1,8 @@
+from object_tracker import ObjectTracker
 
-from object_tracker import SortTracker
+class Camera:
 
-class Camera: 
-
-	def __init__(self, uid ):
+	def __init__(self, uid):
 		self.uid = uid
-
-
+		self.tracker = ObjectTracker('sort').trackerObject.mot_tracker
 

@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 
 #define CAMERA_WIDTH 1920
 #define CAMERA_HEIGHT 1080
@@ -10,8 +10,8 @@
 #define QUEUE_MAX_SIZE 2
 
 #define COMPRESSION_QUALITY 60
-
+#define COMPRESSION_WRITE_CLIP 250000
 
 #if DEBUG_PRINT
-	#include <iostream>
+#include <iostream>
 #endif

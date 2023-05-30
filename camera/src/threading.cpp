@@ -1,7 +1,7 @@
-#include <threading.h>
 #include <stdexcept>
+#include <threading.h>
 
- void set_thread_affinity(std::thread &thread, int core) {
+void set_thread_affinity(std::thread &thread, int core) {
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
   CPU_SET(core, &cpuset);

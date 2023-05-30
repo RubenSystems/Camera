@@ -19,4 +19,4 @@ private:
   std::vector<std::thread> threads_;
 };
 
-}
+} // namespace rscamera

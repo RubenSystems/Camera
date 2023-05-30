@@ -71,7 +71,6 @@ void Compresser::compress(uint8_t *source_image) {
   size_t size = buffers_.buffer_size();
 
   yuv420_to_jpeg(source_image, &buffer, &size);
-
   pipe_->add({buffer, size});
 }
 

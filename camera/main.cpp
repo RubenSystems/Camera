@@ -1,23 +1,17 @@
-#include <chrono>
-#include <condition_variable>
-#include <iomanip>
-#include <iostream>
-#include <memory>
-
-#include <string.h>
-#include <config.h>
 #include <camera.h>
+#include <chrono>
 #include <compression_pool.h>
+#include <config.h>
 #include <rsics_server.h>
-
+#include <string.h>
 
 #include <buffer_pool.h>
 #include <threading.h>
+#include <rsics_client.h>
 
 #define FRAME_COUNT_RANGE 2
 #define FRAME_COUNT 100
 #define BYTES_PER_FRAME 1465
-
 
 int main() {
 
@@ -29,6 +23,7 @@ int main() {
   });
 
   rsics::BroadcastServer server;
+  rsics::Server ml_server("5253", "192.168.86.46");
 
   uint64_t frames_processed = 0;
   auto start = std::chrono::high_resolution_clock::now();
@@ -37,23 +32,26 @@ int main() {
 
   rscamera::Pipeline<std::vector<libcamera::Span<uint8_t>>> frame_pipeline;
   rscamera::Pipeline<rscamera::CompressedObject> compression_pipeline;
-  rscamera::CompressionPool compression_pool(&frame_pipeline, &compression_pipeline,
-                                   camera.dimensions().stride, {0, 1, 2, 3});
+  rscamera::CompressionPool compression_pool(
+      &frame_pipeline, &compression_pipeline, camera.dimensions().stride,
+      {0, 1, 2, 3});
 
   std::thread sending_thread;
   sending_thread = std::thread(
-      [&server, &compression_pipeline, &frames_processed, &sending_thread]() {
+      [&server, &ml_server, &compression_pipeline, &frames_processed, &sending_thread]() {
         while (true) {
           rscamera::CompressedObject frame = compression_pipeline.pop();
           server.broadcast(frame.object, frame.size);
-          // if (frame.size / BYTES_PER_FRAME > FRAME_COUNT + FRAME_COUNT_RANGE)
-          // { 	compresser.dec_quality(); } else if (frame.size /
-          // BYTES_PER_FRAME < FRAME_COUNT - FRAME_COUNT_RANGE) {
-          // compresser.inc_quality();
-          // }
-          #if DEBUG_PRINT
+          ml_server.send(frame.object, frame.size);
+
+// if (frame.size / BYTES_PER_FRAME > FRAME_COUNT + FRAME_COUNT_RANGE)
+// { 	compresser.dec_quality(); } else if (frame.size /
+// BYTES_PER_FRAME < FRAME_COUNT - FRAME_COUNT_RANGE) {
+// compresser.inc_quality();
+// }
+#if DEBUG_PRINT
           frames_processed++;
-          #endif
+#endif
         }
       });
 
@@ -73,14 +71,14 @@ int main() {
         std::chrono::duration_cast<std::chrono::seconds>(current - start)
             .count();
 
-    #if DEBUG_PRINT
-      uint64_t frames_per_second = frames_processed / difference;
-      std::cout << frames_per_second << "\n";
-    #endif
+#if DEBUG_PRINT
+    uint64_t frames_per_second = frames_processed / difference;
+    std::cout << frames_per_second << "\n";
+#endif
 
     camera.next_frame(req);
     delete req;
   }
-  
+
   return 0;
 }

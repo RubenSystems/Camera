@@ -1,7 +1,6 @@
 #pragma once
 
-#include <iomanip>
-#include <iostream>
+
 #include <memory>
 #include <thread>
 #include <unordered_map>
@@ -15,8 +14,8 @@
 #include <libcamera/property_ids.h>
 
 #include <completed_request.h>
-#include <pipeline.h>
 #include <config.h>
+#include <pipeline.h>
 
 /*
         === Modes for the camera ===
@@ -62,8 +61,6 @@
         }]
 
 */
-
-
 
 namespace rscamera {
 

@@ -1,10 +1,9 @@
 #pragma once
 
 #include <condition_variable>
+#include <config.h>
 #include <mutex>
 #include <queue>
-#include <config.h>
-
 
 namespace rscamera {
 template <typename T> class Pipeline {

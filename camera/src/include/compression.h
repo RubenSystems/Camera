@@ -3,10 +3,10 @@
 #include <string>
 
 #include <buffer_pool.h>
+#include <config.h>
 #include <jpeglib.h>
 #include <pipeline.h>
 #include <vector>
-#include <config.h>
 
 namespace rscamera {
 struct CompressedObject {

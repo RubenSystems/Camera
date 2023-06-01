@@ -1,7 +1,12 @@
 main
 testing/*
+
+*.jpg
+
 # Prerequisites
 *.d
+
+
 
 # Compiled Object files
 *.slo

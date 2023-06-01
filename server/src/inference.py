@@ -11,7 +11,6 @@ from pycoral.utils.dataset import read_label_file
 from pycoral.utils.edgetpu import make_interpreter
 from pycoral.utils.edgetpu import run_inference
 
-from object_tracker import ObjectTracker
 
 
 class Inference:
@@ -22,7 +21,7 @@ class Inference:
 		self.labels = self.__load_labels("../models/coco_labels.txt")
 		self.inference_size = input_size(self.interpreter)
 
-	def inference(self, src_image, tracker):
+	def run(self, src_image, tracker):
 		img = cv2.cvtColor(src_image, cv2.COLOR_BGR2RGB)
 		img = cv2.resize(img, self.inference_size)
 
@@ -94,8 +93,12 @@ class Inference:
 					obj.score
 				]
 			)
+		detections = np.array(detections)
 
-		trdata = tracker.update(np.array(detections))
+		if not detections.any():
+			return []
+			
+		trdata = tracker.update()
 		trackers = []
 		if (np.array(trdata)).size:
 			for td in trdata:
@@ -109,7 +112,7 @@ class Inference:
 		return trackers
 
 
-src_image = cv2.imread("testface.jpg")
+# src_image = cv2.imread("testface.jpg")
 
 
 # x = Inference()

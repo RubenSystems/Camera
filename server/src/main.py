@@ -4,18 +4,16 @@ from threading import Thread
 import numpy as np
 import cv2
 from inference import Inference
-from camera import Camera
+from camera import Camera, CameraManager
 
 server = rsics_server("5253")
 inference = Inference()
 
-clients = {}
+clients = CameraManager()
 
 
 
 def _new_image(ctx_p, from_p, type, ip_p, data_p, data_size):
-
-
 
 	string_buffer = create_string_buffer(17)
 	array_type = c_uint8 * data_size
@@ -23,13 +21,12 @@ def _new_image(ctx_p, from_p, type, ip_p, data_p, data_size):
 
 	memmove(string_buffer, ip_p, 17)
 	client_ip = string_buffer.value.decode('utf-8')
-	print(client_ip)
 	opencv_image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
-	if client_ip not in clients: 
-		clients[client_ip] = Camera(client_ip)
-	res = inference.run(opencv_image, clients[client_ip].tracker)
-
+	
+	client = clients.get(client_ip) 
+	res = inference.run(opencv_image, client.tracker)
 	print(res)
+
 
 
 

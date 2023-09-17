@@ -93,12 +93,14 @@ class Inference:
 					obj.score
 				]
 			)
+
+
 		detections = np.array(detections)
 
 		if not detections.any():
 			return []
-			
-		trdata = tracker.update()
+
+		trdata = tracker.update(detections)
 		trackers = []
 		if (np.array(trdata)).size:
 			for td in trdata:
@@ -108,14 +110,4 @@ class Inference:
 				trackers.append(track_id)
 
 
-		
 		return trackers
-
-
-# src_image = cv2.imread("testface.jpg")
-
-
-# x = Inference()
-# tracker  = ObjectTracker("sort").trackerObject.mot_tracker
-# peo = x.inference(src_image, tracker)
-# print(peo)

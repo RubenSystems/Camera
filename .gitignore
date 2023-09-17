@@ -1,9 +1,11 @@
-# Created by https://www.toptal.com/developers/gitignore/api/python,c,c++
-# Edit at https://www.toptal.com/developers/gitignore?templates=python,c,c++
-
 ### C ###
 # Prerequisites
 *.d
+
+# Don't post private stuff
+*.p8
+
+.env
 
 # Object files
 *.o
